@@ -76,3 +76,9 @@ export interface AuditEntry {
   scopes: string[];
   purpose?: string;
 }
+
+export interface AgentPolicy {
+  agentId: string;
+  allowedScopes: string[];
+  allowSensitive: boolean;
+}

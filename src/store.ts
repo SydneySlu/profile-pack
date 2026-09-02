@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, open, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { AuditEntry, PresentationPolicy, ProfileEvent, ProfileItem, ProfilePack, ProfileStatus, ProfileUpdate, Proposal } from "./types.js";
+import type { AgentPolicy, AuditEntry, PresentationPolicy, ProfileEvent, ProfileItem, ProfilePack, ProfileStatus, ProfileUpdate, Proposal } from "./types.js";
 
 const DEFAULT_POLICY: PresentationPolicy = {
   mode: "implicit_personalization",
@@ -18,6 +18,7 @@ export class ProfileStore {
   private readonly proposalsPath: string;
   private readonly auditPath: string;
   private readonly lockPath: string;
+  private readonly agentsPath: string;
 
   constructor(rootDir: string) {
     this.rootDir = rootDir;
@@ -26,6 +27,7 @@ export class ProfileStore {
     this.proposalsPath = join(rootDir, "proposals.json");
     this.auditPath = join(rootDir, "audit.jsonl");
     this.lockPath = join(rootDir, ".write.lock");
+    this.agentsPath = join(rootDir, "agents.json");
   }
 
   async ensure(): Promise<void> {
@@ -45,6 +47,12 @@ export class ProfileStore {
     if (!(await this.exists(this.proposalsPath))) await this.writeJson(this.proposalsPath, []);
     if (!(await this.exists(this.eventsPath))) await writeFile(this.eventsPath, "", "utf8");
     if (!(await this.exists(this.auditPath))) await writeFile(this.auditPath, "", "utf8");
+    if (!(await this.exists(this.agentsPath))) await this.writeJson(this.agentsPath, [
+      { agentId: "codex", allowedScopes: ["global", "*"], allowSensitive: false },
+      { agentId: "claude-code", allowedScopes: ["global", "*"], allowSensitive: false },
+      { agentId: "workbuddy", allowedScopes: ["global", "*"], allowSensitive: false },
+      { agentId: "user", allowedScopes: ["global", "*"], allowSensitive: true }
+    ] satisfies AgentPolicy[]);
   }
 
   async status(): Promise<ProfileStatus> {
@@ -62,9 +70,12 @@ export class ProfileStore {
 
   async getView(scopes: string[], agentId: string, purpose?: string, includeSensitive = false): Promise<{ profile: ProfilePack; items: ProfileItem[]; summary: string }> {
     const profile = await this.getProfile();
+    const policy = await this.getAgentPolicy(agentId);
     const requested = new Set(scopes.length ? scopes : ["global"]);
-    const items = profile.items.filter((item) => (item.scope === "global" || requested.has(item.scope)) && (includeSensitive || item.sensitivity === "normal"));
-    await this.audit({ timestamp: new Date().toISOString(), agentId, action: "read_profile", scopes: [...requested], purpose });
+    const allowed = (scope: string) => scope === "global" || (policy.allowedScopes.includes("*") || policy.allowedScopes.includes(scope));
+    const effectiveScopes = [...requested].filter(allowed);
+    const items = profile.items.filter((item) => (item.scope === "global" || effectiveScopes.includes(item.scope)) && ((includeSensitive && policy.allowSensitive) || item.sensitivity === "normal"));
+    await this.audit({ timestamp: new Date().toISOString(), agentId, action: "read_profile", scopes: effectiveScopes, purpose });
     const summary = items.length === 0 ? "当前没有可用的用户画像内容。" : items.map((item) => `- ${item.statement}`).join("\n");
     return { profile: { ...profile, items }, items, summary };
   }
@@ -150,6 +161,12 @@ export class ProfileStore {
   async audit(entry: AuditEntry): Promise<void> {
     await this.ensure();
     await writeFile(this.auditPath, `${JSON.stringify(entry)}\n`, { encoding: "utf8", flag: "a" });
+  }
+
+  async getAgentPolicy(agentId: string): Promise<AgentPolicy> {
+    await this.ensure();
+    const policies = JSON.parse(await readFile(this.agentsPath, "utf8")) as AgentPolicy[];
+    return policies.find((policy) => policy.agentId === agentId) ?? { agentId, allowedScopes: ["global"], allowSensitive: false };
   }
 
   private toItem(update: ProfileUpdate, agentId: string, now: string): ProfileItem {

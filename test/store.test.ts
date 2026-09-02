@@ -19,7 +19,7 @@ test("proposals require confirmation before changing profile", async () => {
   const proposal = await store.propose({ kind: "trait", scope: "coding", statement: "偏好先看取舍", confidence: 0.8, evidenceCount: 3 }, "codex", ["e1", "e2", "e3"]);
   assert.equal((await store.status()).itemCount, 0);
   await store.decideProposal(proposal.id, "confirm");
-  const view = await store.getView(["coding"], "claude", "coding_task");
+  const view = await store.getView(["coding"], "claude-code", "coding_task");
   assert.equal(view.items[0]?.statement, "偏好先看取舍");
 });
 
@@ -29,7 +29,7 @@ test("sensitive items are hidden by default", async () => {
   const filtered = await store.getView(["global"], "codex");
   assert.equal(filtered.items.length, 1);
   assert.equal(filtered.profile.items.length, 1);
-  assert.equal((await store.getView(["global"], "codex", undefined, true)).items.length, 2);
+  assert.equal((await store.getView(["global"], "user", undefined, true)).items.length, 2);
 });
 
 test("concurrent proposals preserve all events", async () => {
