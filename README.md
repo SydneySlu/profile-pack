@@ -15,7 +15,37 @@ Version `0.1.0` provides:
 - multi-Agent observation aggregation and same-dimension conflict detection;
 - tests for onboarding state, proposal review, privacy filtering, and concurrent writes.
 
-This remains an MVP foundation. Agents must submit distilled observations; a model-specific extractor is not bundled yet. The daemon is local-only.
+This remains an MVP foundation. It includes configurable Ollama and OpenAI-compatible extractors, and still supports direct structured observations as a no-model fallback. The daemon is local-only.
+
+## LLM extraction providers
+
+The MCP tool `extract_profile_observations` supports two providers:
+
+### Local Ollama (default)
+
+```bash
+export PROFILE_PACK_LLM_PROVIDER=ollama
+export PROFILE_PACK_OLLAMA_BASE_URL=http://127.0.0.1:11434
+export PROFILE_PACK_OLLAMA_MODEL=qwen3:8b
+```
+
+The transcript is sent to the local Ollama process and is not written to the Profile Pack by this tool.
+
+### OpenAI-compatible API
+
+```bash
+export PROFILE_PACK_LLM_PROVIDER=openai-compatible
+export PROFILE_PACK_OPENAI_BASE_URL=https://api.openai.com/v1
+export PROFILE_PACK_OPENAI_MODEL=gpt-4o-mini
+export PROFILE_PACK_OPENAI_API_KEY=your-key
+export PROFILE_PACK_ALLOW_REMOTE_EXTRACTION=true
+```
+
+Remote extraction is blocked unless `PROFILE_PACK_ALLOW_REMOTE_EXTRACTION=true` is set explicitly, because the conversation text leaves the local machine.
+
+### Manual fallback
+
+If no model is available, an Agent can call `record_profile_observation` directly with a structured observation. For example, it can submit “用户在编程任务中偏好先比较方案取舍” with a scope, dimension, confidence, and evidence. This keeps the system usable without a model and is also useful when a host Agent performs its own extraction.
 
 ## Run locally
 
