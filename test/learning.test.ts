@@ -41,3 +41,9 @@ test("a candidate can be promoted without bypassing profile confirmation", async
   assert.equal((await store.listProposals())[0]?.id, proposal.id);
   assert.equal((await learning.getCandidate(candidate.candidateId)).status, "promoted");
 });
+
+test("promotion threshold prevents weak one-off observations", async () => {
+  const learning = await makeLearning();
+  await learning.observe({ agentId: "codex", scope: "coding", dimension: "format", value: "concise", statement: "偏好简洁示例", confidence: 0.6 });
+  assert.equal((await learning.listPromotableCandidates()).length, 0);
+});

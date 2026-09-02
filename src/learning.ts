@@ -50,6 +50,7 @@ export class LearningEngine {
   }
 
   async listCandidates(): Promise<TraitCandidate[]> { await this.ensure(); return this.readCandidates(); }
+  async listPromotableCandidates(minEvidence = 2, minConfidence = 0.7): Promise<TraitCandidate[]> { return (await this.listCandidates()).filter((candidate) => candidate.status === "candidate" && candidate.evidenceCount >= minEvidence && candidate.confidence >= minConfidence); }
   async getCandidate(candidateId: string): Promise<TraitCandidate> {
     const candidate = (await this.readCandidates()).find((item) => item.candidateId === candidateId);
     if (!candidate) throw new Error(`Candidate not found: ${candidateId}`);
@@ -62,6 +63,18 @@ export class LearningEngine {
       const candidate = candidates.find((item) => item.candidateId === candidateId);
       if (!candidate) throw new Error(`Candidate not found: ${candidateId}`);
       candidate.status = "promoted";
+      candidate.updatedAt = new Date().toISOString();
+      await this.writeJson(this.candidatesPath, candidates);
+      return candidate;
+    });
+  }
+
+  async dismissCandidate(candidateId: string): Promise<TraitCandidate> {
+    return this.withLock(async () => {
+      const candidates = await this.readCandidates();
+      const candidate = candidates.find((item) => item.candidateId === candidateId);
+      if (!candidate) throw new Error(`Candidate not found: ${candidateId}`);
+      candidate.status = "dismissed";
       candidate.updatedAt = new Date().toISOString();
       await this.writeJson(this.candidatesPath, candidates);
       return candidate;

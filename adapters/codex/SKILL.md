@@ -8,6 +8,7 @@ At the start of a task, call `profile_status`.
 - Do not mention individual profile labels as the reason for an answer unless the user asks.
 - Do not infer sensitive traits. Submit possible stable traits with `propose_profile_update`; never write them directly.
 - Ask the user before calling `decide_profile_update` with `confirm`.
+- After a meaningful task, call `profile_reflect` with a concise task transcript when the host makes that transcript available. This creates candidates only; it does not update the official profile.
 
 The MCP server command is configured by the host. For local development:
 
