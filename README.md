@@ -51,7 +51,7 @@ Sensitive items are filtered unless an explicit read request includes `includeSe
 
 ## Learning flow
 
-Agents can call `record_profile_observation` with a scope, dimension, value, confidence, and evidence. Observations are aggregated into `candidates.json`; differing values for the same scope and dimension appear in `conflicts.json`. Neither candidates nor conflicts modify the official profile automatically. The user must decide what to keep, and a later promotion workflow will turn accepted candidates into profile proposals.
+Agents can call `record_profile_observation` with a scope, dimension, value, confidence, and evidence. Observations are aggregated into `candidates.json`; differing values for the same scope and dimension appear in `conflicts.json`. Neither candidates nor conflicts modify the official profile automatically. After review, `promote_trait_candidate` turns a candidate into a normal profile proposal; the user must still confirm that proposal before it becomes official.
 
 ## Git identity setup
 
