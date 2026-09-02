@@ -5,4 +5,6 @@
 3. Replace both absolute paths.
 4. Use the Claude Code adapter at `adapters/claude-code/SKILL.md`.
 
+For a token-protected Agent, keep the token in Claude Code's private MCP configuration and pass it to `get_profile` and `profile_session_start`. Use a distinct `agentId` from Codex so permissions and audit entries remain separable.
+
 The adapter calls `profile_session_start` at task start and `profile_session_end` after meaningful tasks when the transcript is available.

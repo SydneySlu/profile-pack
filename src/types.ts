@@ -82,6 +82,8 @@ export interface AgentPolicy {
   agentId: string;
   allowedScopes: string[];
   allowSensitive: boolean;
+  /** Explicit per-item grants for sensitive fields. `allowSensitive` remains the broad opt-in. */
+  sensitiveItemIds?: string[];
   token?: string;
 }
 

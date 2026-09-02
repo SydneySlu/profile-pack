@@ -79,6 +79,8 @@ PROFILE_PACK_DIR="$PWD/.profile-pack" PROFILE_PACK_WEB_PORT=8787 npm run web
 
 Open `http://127.0.0.1:8787`. The UI shows the non-sensitive profile, candidates, conflicts, and pending proposals, and lets you review them. It is localhost-only and does not display sensitive fields.
 
+The UI also provides version comparison and per-item sensitive-field grants. A grant only changes the selected Agent policy; the Agent must still request `includeSensitive: true` and authenticate with its token. The same operation is available from the CLI: `profile-pack agents` and `profile-pack authorize-sensitive --agent-id codex --item-ids <id1,id2>`.
+
 Configure the MCP client to launch `npm run mcp` from this repository, or use the built `dist/src/mcp.js` after `npm run build`.
 
 ## Data model

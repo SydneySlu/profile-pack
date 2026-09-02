@@ -81,7 +81,8 @@ export class ProfileStore {
     const requested = new Set(scopes.length ? scopes : ["global"]);
     const allowed = (scope: string) => scope === "global" || (policy.allowedScopes.includes("*") || policy.allowedScopes.includes(scope));
     const effectiveScopes = [...requested].filter(allowed);
-    const items = profile.items.filter((item) => (item.scope === "global" || effectiveScopes.includes(item.scope)) && ((includeSensitive && policy.allowSensitive) || item.sensitivity === "normal"));
+    const grantedSensitive = new Set(policy.sensitiveItemIds ?? []);
+    const items = profile.items.filter((item) => (item.scope === "global" || effectiveScopes.includes(item.scope)) && (item.sensitivity === "normal" || (includeSensitive && (policy.allowSensitive || grantedSensitive.has(item.id)))));
     await this.audit({ timestamp: new Date().toISOString(), agentId, action: "read_profile", scopes: effectiveScopes, purpose });
     const summary = items.length === 0 ? "当前没有可用的用户画像内容。" : items.map((item) => `- ${item.statement}`).join("\n");
     return { profile: { ...profile, items }, items, summary };
@@ -188,6 +189,25 @@ export class ProfileStore {
       if (!policies.includes(policy)) policies.push(policy);
       await this.writeJson(this.agentsPath, policies);
       return policy;
+    });
+  }
+
+  async listAgentPolicies(): Promise<AgentPolicy[]> {
+    await this.ensure();
+    const policies = JSON.parse(await readFile(this.agentsPath, "utf8")) as AgentPolicy[];
+    return policies.map(({ token: _token, ...publicPolicy }) => publicPolicy);
+  }
+
+  async setAgentSensitiveItems(agentId: string, itemIds: string[]): Promise<AgentPolicy> {
+    return this.withLock(async () => {
+      const policies = JSON.parse(await readFile(this.agentsPath, "utf8")) as AgentPolicy[];
+      const policy = policies.find((item) => item.agentId === agentId) ?? { agentId, allowedScopes: ["global"], allowSensitive: false };
+      policy.sensitiveItemIds = [...new Set(itemIds)];
+      if (!policies.includes(policy)) policies.push(policy);
+      await this.writeJson(this.agentsPath, policies);
+      await this.audit({ timestamp: new Date().toISOString(), agentId: "user", action: "set_sensitive_item_grants", scopes: ["global"], purpose: `target:${agentId}` });
+      const { token: _token, ...publicPolicy } = policy;
+      return publicPolicy;
     });
   }
 
