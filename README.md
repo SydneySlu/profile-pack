@@ -72,6 +72,8 @@ PROFILE_PACK_DIR="$PWD/.profile-pack" PROFILE_PACK_PORT=8765 npm run daemon
 
 It listens on `http://127.0.0.1:8765/mcp` and exposes `/healthz`. The daemon is intentionally bound to localhost in this MVP; it does not provide remote access or internet authentication.
 
+An HTTP configuration template is available at `adapters/mcp-config.shared-daemon.example.json`. Use separate `agentId` values in tool calls even though both hosts connect to the same daemon.
+
 Start the local Profile management UI with:
 
 ```bash
