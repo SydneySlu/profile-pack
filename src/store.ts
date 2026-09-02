@@ -19,6 +19,7 @@ export class ProfileStore {
   private readonly auditPath: string;
   private readonly lockPath: string;
   private readonly agentsPath: string;
+  private readonly snapshotsDir: string;
 
   constructor(rootDir: string) {
     this.rootDir = rootDir;
@@ -28,15 +29,18 @@ export class ProfileStore {
     this.auditPath = join(rootDir, "audit.jsonl");
     this.lockPath = join(rootDir, ".write.lock");
     this.agentsPath = join(rootDir, "agents.json");
+    this.snapshotsDir = join(rootDir, "snapshots");
   }
 
   async ensure(): Promise<void> {
     await mkdir(this.rootDir, { recursive: true });
+    await mkdir(this.snapshotsDir, { recursive: true });
     if (!(await this.exists(this.profilePath))) {
       const now = new Date().toISOString();
       await this.writeJson(this.profilePath, {
         schemaVersion: "0.1",
         profileId: randomUUID(),
+        version: 0,
         initialized: false,
         createdAt: now,
         updatedAt: now,
@@ -65,7 +69,9 @@ export class ProfileStore {
 
   async getProfile(): Promise<ProfilePack> {
     await this.ensure();
-    return JSON.parse(await readFile(this.profilePath, "utf8")) as ProfilePack;
+    const profile = JSON.parse(await readFile(this.profilePath, "utf8")) as ProfilePack;
+    if (typeof profile.version !== "number") profile.version = 0;
+    return profile;
   }
 
   async getView(scopes: string[], agentId: string, purpose?: string, includeSensitive = false): Promise<{ profile: ProfilePack; items: ProfileItem[]; summary: string }> {
@@ -85,9 +91,10 @@ export class ProfileStore {
       const profile = await this.getProfile();
       const now = new Date().toISOString();
       profile.initialized = true;
+      profile.version += 1;
       profile.updatedAt = now;
       profile.items = items.map((update) => this.toItem(update, agentId, now));
-      await this.writeJson(this.profilePath, profile);
+      await this.commitProfile(profile);
       await this.appendEventUnlocked({ eventId: randomUUID(), type: "profile_initialized", agentId, createdAt: now, payload: { itemIds: profile.items.map((i) => i.id) } });
       return profile;
     });
@@ -125,8 +132,9 @@ export class ProfileStore {
           if (!existing.sourceAgents.includes(proposal.agentId)) existing.sourceAgents.push(proposal.agentId);
         } else profile.items.push(this.toItem(proposal.update, proposal.agentId, proposal.updatedAt));
         profile.initialized = true;
+        profile.version += 1;
         profile.updatedAt = proposal.updatedAt;
-        await this.writeJson(this.profilePath, profile);
+        await this.commitProfile(profile);
       }
       await this.writeJson(this.proposalsPath, proposals);
       await this.appendEventUnlocked({ eventId: randomUUID(), type: decision === "confirm" ? "profile_update_confirmed" : "profile_update_rejected", agentId: reviewerId, createdAt: proposal.updatedAt, payload: { proposalId: id, sourceAgentId: proposal.agentId, update: proposal.update } });
@@ -151,8 +159,9 @@ export class ProfileStore {
         if (!existingKeys.has(key)) { profile.items.push({ ...item, id: item.id || randomUUID(), sourceAgents: [...new Set([...(item.sourceAgents ?? []), agentId])] }); existingKeys.add(key); }
       }
       profile.initialized = profile.items.length > 0;
+      profile.version += 1;
       profile.updatedAt = new Date().toISOString();
-      await this.writeJson(this.profilePath, profile);
+      await this.commitProfile(profile);
       await this.appendEventUnlocked({ eventId: randomUUID(), type: "profile_imported", agentId, createdAt: profile.updatedAt, payload: { importedCount: candidate.profile.items.length, sourceProfileId: candidate.profile.profileId } });
       return profile;
     });
@@ -169,6 +178,40 @@ export class ProfileStore {
     return policies.find((policy) => policy.agentId === agentId) ?? { agentId, allowedScopes: ["global"], allowSensitive: false };
   }
 
+  async listVersions(): Promise<Array<{ version: number; updatedAt: string }>> {
+    await this.ensure();
+    const profile = await this.getProfile();
+    const versions: Array<{ version: number; updatedAt: string }> = [];
+    for (let version = 1; version <= profile.version; version++) {
+      const snapshot = await this.readSnapshot(version).catch(() => undefined);
+      if (snapshot) versions.push({ version, updatedAt: snapshot.updatedAt });
+    }
+    return versions;
+  }
+
+  async compareVersions(fromVersion: number, toVersion: number): Promise<{ fromVersion: number; toVersion: number; added: ProfileItem[]; removed: ProfileItem[]; changed: Array<{ before: ProfileItem; after: ProfileItem }> }> {
+    const before = await this.readSnapshot(fromVersion);
+    const after = await this.readSnapshot(toVersion);
+    const beforeMap = new Map(before.items.map((item) => [item.id, item]));
+    const afterMap = new Map(after.items.map((item) => [item.id, item]));
+    const added = after.items.filter((item) => !beforeMap.has(item.id));
+    const removed = before.items.filter((item) => !afterMap.has(item.id));
+    const changed = after.items.flatMap((item) => { const old = beforeMap.get(item.id); return old && JSON.stringify(old) !== JSON.stringify(item) ? [{ before: old, after: item }] : []; });
+    return { fromVersion, toVersion, added, removed, changed };
+  }
+
+  async rollback(version: number, agentId = "user"): Promise<ProfilePack> {
+    return this.withLock(async () => {
+      const previous = await this.readSnapshot(version);
+      const profile = await this.getProfile();
+      const now = new Date().toISOString();
+      const restored: ProfilePack = { ...previous, version: profile.version + 1, updatedAt: now };
+      await this.commitProfile(restored);
+      await this.appendEventUnlocked({ eventId: randomUUID(), type: "profile_rolled_back", agentId, createdAt: now, payload: { fromVersion: version, toVersion: restored.version } });
+      return restored;
+    });
+  }
+
   private toItem(update: ProfileUpdate, agentId: string, now: string): ProfileItem {
     return { id: randomUUID(), kind: update.kind, scope: update.scope, statement: update.statement, sensitivity: update.sensitivity ?? "normal", confidence: clamp(update.confidence ?? 1), evidenceCount: update.evidenceCount ?? 1, sourceAgents: [agentId], createdAt: now, updatedAt: now, expiresAt: update.expiresAt };
   }
@@ -177,6 +220,8 @@ export class ProfileStore {
   private async appendEventUnlocked(event: ProfileEvent): Promise<void> { await writeFile(this.eventsPath, `${JSON.stringify(event)}\n`, { encoding: "utf8", flag: "a" }); }
   private async exists(path: string): Promise<boolean> { try { await readFile(path); return true; } catch { return false; } }
   private async writeJson(path: string, value: unknown): Promise<void> { const tmp = `${path}.${process.pid}.${randomUUID()}.tmp`; await writeFile(tmp, JSON.stringify(value, null, 2), "utf8"); await rename(tmp, path); }
+  private async commitProfile(profile: ProfilePack): Promise<void> { await this.writeJson(this.profilePath, profile); await this.writeJson(join(this.snapshotsDir, `v${String(profile.version).padStart(6, "0")}.json`), profile); }
+  private async readSnapshot(version: number): Promise<ProfilePack> { return JSON.parse(await readFile(join(this.snapshotsDir, `v${String(version).padStart(6, "0")}.json`), "utf8")) as ProfilePack; }
 
   private async withLock<T>(fn: () => Promise<T>): Promise<T> {
     await this.ensure();

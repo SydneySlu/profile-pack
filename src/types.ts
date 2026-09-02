@@ -26,6 +26,7 @@ export interface PresentationPolicy {
 export interface ProfilePack {
   schemaVersion: "0.1";
   profileId: string;
+  version: number;
   initialized: boolean;
   createdAt: string;
   updatedAt: string;
@@ -45,7 +46,7 @@ export interface ProfileUpdate {
 
 export interface ProfileEvent {
   eventId: string;
-  type: "profile_initialized" | "profile_imported" | "profile_update_proposed" | "profile_update_confirmed" | "profile_update_rejected";
+  type: "profile_initialized" | "profile_imported" | "profile_rolled_back" | "profile_update_proposed" | "profile_update_confirmed" | "profile_update_rejected";
   agentId: string;
   createdAt: string;
   payload: Record<string, unknown>;
@@ -117,6 +118,7 @@ export interface TraitConflict {
   reason: string;
   status: "open" | "resolved" | "dismissed";
   resolution?: "keep_left" | "keep_right" | "keep_both" | "dismiss";
+  classification?: "contradiction" | "contextual_variation" | "unknown";
   updatedAt: string;
 }
 

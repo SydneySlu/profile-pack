@@ -112,6 +112,10 @@ Use `profile-pack eval --file response.txt --scope coding` to check hard safety 
 
 Host integration examples are in `docs/integration/codex.md`, `docs/integration/claude-code.md`, and `adapters/mcp-config.example.json`.
 
+## Profile versions and rollback
+
+Every official Profile update creates an immutable snapshot under `snapshots/`. Use `profile-pack versions` to list snapshots, `profile-pack compare --from 1 --to 2` to inspect changes, and `profile-pack rollback --version 1` to restore an older state as a new version. Rollback never deletes the intervening history.
+
 ## Git identity setup
 
 The commit error came from Git not knowing the author identity. Configure it once for your macOS user account in a terminal:

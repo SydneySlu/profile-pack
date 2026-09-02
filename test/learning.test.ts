@@ -24,6 +24,7 @@ test("different values in one dimension create a conflict", async () => {
   const result = await learning.observe({ agentId: "claude-code", scope: "global", dimension: "response_length", value: "detailed", statement: "偏好详细回答", confidence: 0.8 });
   assert.equal(result.conflicts.length, 1);
   assert.equal(result.conflicts[0]?.status, "open");
+  assert.equal(result.conflicts[0]?.classification, "contradiction");
   const resolved = await learning.resolveConflict(result.conflicts[0]!.conflictId, "keep_both");
   assert.equal(resolved.resolution, "keep_both");
   assert.equal(resolved.status, "resolved");

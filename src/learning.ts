@@ -116,7 +116,10 @@ export class LearningEngine {
       const [scope, dimension] = key.split("|");
       const ids = distinct.map((candidate) => candidate.candidateId).sort();
       const existing = active.find((conflict) => conflict.scope === scope && conflict.dimension === dimension && sameIds(conflict.candidateIds, ids));
-      if (!existing) active.push({ conflictId: randomUUID(), scope, dimension, candidateIds: ids, reason: "同一场景和维度出现了不同用户倾向，需要用户判断是冲突还是情境差异。", status: "open", updatedAt: new Date().toISOString() });
+      if (!existing) {
+        const classification = classifyConflict(distinct.map((candidate) => candidate.value));
+        active.push({ conflictId: randomUUID(), scope, dimension, candidateIds: ids, reason: classification === "contradiction" ? "同一场景和维度出现了语义相反的倾向。" : "同一场景和维度出现了不同倾向，需要用户判断是冲突还是情境差异。", classification, status: "open", updatedAt: new Date().toISOString() });
+      }
     }
     await this.writeJson(this.conflictsPath, active);
     return active;
@@ -140,3 +143,10 @@ function clamp(value: number): number { return Math.max(0, Math.min(1, value)); 
 function aggregateConfidence(previous: number, incoming: number, count: number): number { return clamp(previous + (incoming - previous) / count); }
 export function decayConfidence(confidence: number, ageDays: number, halfLifeDays = 90): number { return clamp(confidence * Math.pow(0.5, Math.max(0, ageDays) / halfLifeDays)); }
 function sameIds(a: string[], b: string[]): boolean { return a.length === b.length && a.every((value, index) => value === b[index]); }
+function classifyConflict(values: string[]): "contradiction" | "contextual_variation" | "unknown" {
+  const normalized = values.map(normalize);
+  const oppositePairs = [["concise", "detailed"], ["简洁", "详细"], ["fast", "thorough"], ["快速", "充分"], ["yes", "no"], ["喜欢", "不喜欢"]];
+  if (oppositePairs.some(([left, right]) => normalized.includes(left) && normalized.includes(right))) return "contradiction";
+  if (normalized.length > 1 && normalized.some((value) => value.includes("context") || value.includes("场景"))) return "contextual_variation";
+  return "unknown";
+}
