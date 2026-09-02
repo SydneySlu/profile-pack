@@ -82,6 +82,7 @@ export interface AgentPolicy {
   agentId: string;
   allowedScopes: string[];
   allowSensitive: boolean;
+  token?: string;
 }
 
 export interface ProfileObservation {

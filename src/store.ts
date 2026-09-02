@@ -74,9 +74,10 @@ export class ProfileStore {
     return profile;
   }
 
-  async getView(scopes: string[], agentId: string, purpose?: string, includeSensitive = false): Promise<{ profile: ProfilePack; items: ProfileItem[]; summary: string }> {
+  async getView(scopes: string[], agentId: string, purpose?: string, includeSensitive = false, token?: string): Promise<{ profile: ProfilePack; items: ProfileItem[]; summary: string }> {
     const profile = await this.getProfile();
     const policy = await this.getAgentPolicy(agentId);
+    if (policy.token && policy.token !== token) throw new Error(`Agent authentication failed for ${agentId}`);
     const requested = new Set(scopes.length ? scopes : ["global"]);
     const allowed = (scope: string) => scope === "global" || (policy.allowedScopes.includes("*") || policy.allowedScopes.includes(scope));
     const effectiveScopes = [...requested].filter(allowed);
@@ -176,6 +177,18 @@ export class ProfileStore {
     await this.ensure();
     const policies = JSON.parse(await readFile(this.agentsPath, "utf8")) as AgentPolicy[];
     return policies.find((policy) => policy.agentId === agentId) ?? { agentId, allowedScopes: ["global"], allowSensitive: false };
+  }
+
+  async setAgentToken(agentId: string, token: string): Promise<AgentPolicy> {
+    return this.withLock(async () => {
+      await this.ensure();
+      const policies = JSON.parse(await readFile(this.agentsPath, "utf8")) as AgentPolicy[];
+      const policy = policies.find((item) => item.agentId === agentId) ?? { agentId, allowedScopes: ["global"], allowSensitive: false };
+      policy.token = token;
+      if (!policies.includes(policy)) policies.push(policy);
+      await this.writeJson(this.agentsPath, policies);
+      return policy;
+    });
   }
 
   async listVersions(): Promise<Array<{ version: number; updatedAt: string }>> {

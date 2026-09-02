@@ -116,6 +116,16 @@ Host integration examples are in `docs/integration/codex.md`, `docs/integration/
 
 Every official Profile update creates an immutable snapshot under `snapshots/`. Use `profile-pack versions` to list snapshots, `profile-pack compare --from 1 --to 2` to inspect changes, and `profile-pack rollback --version 1` to restore an older state as a new version. Rollback never deletes the intervening history.
 
+## Agent capability tokens
+
+For a host that should authenticate independently, generate a token with:
+
+```bash
+profile-pack agent-token --agent-id codex
+```
+
+Store the printed token in that host's private MCP configuration and pass it as the `token` argument to `get_profile` and `profile_session_start`. If an Agent policy has a token, reads without the matching token are rejected. The token is stored in local `agents.json`; keep the Profile Pack directory private.
+
 ## Git identity setup
 
 The commit error came from Git not knowing the author identity. Configure it once for your macOS user account in a terminal:

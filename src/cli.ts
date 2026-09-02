@@ -57,6 +57,7 @@ async function main(): Promise<void> {
   if (command === "versions") { console.log(JSON.stringify(await store.listVersions(), null, 2)); return; }
   if (command === "compare") { const from = Number(option("--from")); const to = Number(option("--to")); if (!from || !to) throw new Error("Usage: profile-pack compare --from 1 --to 2"); console.log(JSON.stringify(await store.compareVersions(from, to), null, 2)); return; }
   if (command === "rollback") { const version = Number(option("--version")); if (!version) throw new Error("Usage: profile-pack rollback --version 1"); console.log(JSON.stringify(await store.rollback(version), null, 2)); return; }
+  if (command === "agent-token") { const agentId = option("--agent-id"); if (!agentId) throw new Error("Usage: profile-pack agent-token --agent-id codex"); const token = randomUUID(); console.log(JSON.stringify(await store.setAgentToken(agentId, token), null, 2)); console.log(`\nToken (store it in the Agent's private configuration): ${token}`); return; }
   if (command === "promote") {
     const candidateId = option("--candidate-id");
     if (!candidateId) throw new Error("Usage: profile-pack promote --candidate-id <id>");
