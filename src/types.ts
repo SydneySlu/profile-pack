@@ -96,6 +96,8 @@ export interface ProfileObservation {
   statement: string;
   confidence: number;
   evidence?: string;
+  purpose?: string;
+  portability?: "portable" | "agent_specific" | "unknown";
   createdAt: string;
 }
 
@@ -108,6 +110,8 @@ export interface TraitCandidate {
   confidence: number;
   evidenceCount: number;
   sourceAgents: string[];
+  sourceContexts?: string[];
+  portability: "portable" | "agent_specific" | "unknown";
   observationIds: string[];
   status: "candidate" | "promoted" | "dismissed";
   updatedAt: string;

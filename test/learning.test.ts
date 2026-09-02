@@ -21,13 +21,30 @@ test("observations aggregate into a candidate without changing Profile Pack", as
 test("different values in one dimension create a conflict", async () => {
   const learning = await makeLearning();
   await learning.observe({ agentId: "codex", scope: "global", dimension: "response_length", value: "concise", statement: "偏好简洁回答", confidence: 0.8 });
-  const result = await learning.observe({ agentId: "claude-code", scope: "global", dimension: "response_length", value: "detailed", statement: "偏好详细回答", confidence: 0.8 });
+  const result = await learning.observe({ agentId: "codex", scope: "global", dimension: "response_length", value: "detailed", statement: "偏好详细回答", confidence: 0.8 });
   assert.equal(result.conflicts.length, 1);
   assert.equal(result.conflicts[0]?.status, "open");
   assert.equal(result.conflicts[0]?.classification, "contradiction");
   const resolved = await learning.resolveConflict(result.conflicts[0]!.conflictId, "keep_both");
   assert.equal(resolved.resolution, "keep_both");
   assert.equal(resolved.status, "resolved");
+});
+
+test("different Agents' interaction styles coexist as Agent-specific candidates", async () => {
+  const learning = await makeLearning();
+  await learning.observe({ agentId: "codex", scope: "global", dimension: "response_length", value: "detailed", statement: "在学习场景偏好详细解释", confidence: 0.8, purpose: "learning" });
+  const result = await learning.observe({ agentId: "claude-code", scope: "global", dimension: "response_length", value: "concise", statement: "在编程场景偏好简洁说明", confidence: 0.8, purpose: "coding" });
+  assert.equal(result.conflicts.length, 0);
+  const summaries = await learning.listCandidateSummaries();
+  assert.equal(summaries.every((item) => item.candidate.portability === "agent_specific"), true);
+  assert.equal(summaries.some((item) => item.promotable), false);
+});
+
+test("one Agent can keep different preferences for different purposes", async () => {
+  const learning = await makeLearning();
+  await learning.observe({ agentId: "codex", scope: "global", dimension: "response_length", value: "detailed", statement: "学习时偏好详细解释", confidence: 0.8, purpose: "learning" });
+  const result = await learning.observe({ agentId: "codex", scope: "global", dimension: "response_length", value: "concise", statement: "执行时偏好简洁说明", confidence: 0.8, purpose: "execution" });
+  assert.equal(result.conflicts.length, 0);
 });
 
 test("a candidate can be promoted without bypassing profile confirmation", async () => {

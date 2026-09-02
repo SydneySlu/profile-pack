@@ -13,6 +13,7 @@ Version `0.1.0` provides:
 - MCP tools and resources for Claude Code, Codex, and other MCP clients;
 - JSON export for migration;
 - multi-Agent observation aggregation and same-dimension conflict detection;
+- Agent-specific interaction preferences separated from portable user traits;
 - tests for onboarding state, proposal review, privacy filtering, and concurrent writes.
 
 This remains an MVP foundation. It includes configurable Ollama and OpenAI-compatible extractors, and still supports direct structured observations as a no-model fallback. The daemon is local-only.
@@ -92,6 +93,8 @@ Sensitive items are filtered unless an explicit read request includes `includeSe
 ## Learning flow
 
 Agents can call `record_profile_observation` with a scope, dimension, value, confidence, and evidence. Observations are aggregated into `candidates.json`; differing values for the same scope and dimension appear in `conflicts.json`. Neither candidates nor conflicts modify the official profile automatically. After review, `promote_trait_candidate` turns a candidate into a normal profile proposal; the user must still confirm that proposal before it becomes official.
+
+Observations are classified conservatively: a tendency seen through only one Agent remains `agent_specific`; the same tendency observed across at least two Agents becomes `portable`. Opposite values from disjoint Agents are kept as separate Agent-specific candidates and do not create a semantic conflict. A conflict is opened only when the same Agent supplies overlapping opposite values. No LLM is required for this classification.
 
 ## Session lifecycle
 

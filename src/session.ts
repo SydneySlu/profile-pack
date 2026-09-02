@@ -27,7 +27,7 @@ export class SessionManager {
     const extracted = await this.extractor.extract(transcript, session.scope);
     const filtered = filterAutomaticObservations(extracted);
     const results = [];
-    for (const observation of filtered.accepted) results.push(await this.learning.observe(observationsToInput(observation, session.agentId)));
+    for (const observation of filtered.accepted) results.push(await this.learning.observe({ ...observationsToInput(observation, session.agentId), purpose: session.purpose, portability: "unknown" }));
     return { sessionId: session.sessionId, extractedCount: filtered.accepted.length, blockedCount: filtered.blocked.length, blocked: filtered.blocked, results, endedAt: new Date().toISOString() };
   }
 }

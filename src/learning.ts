@@ -35,12 +35,16 @@ export class LearningEngine {
       const key = `${observation.scope}|${observation.dimension}|${normalize(observation.value)}`;
       let candidate = candidates.find((item) => `${item.scope}|${item.dimension}|${normalize(item.value)}` === key && item.status !== "dismissed");
       if (!candidate) {
-        candidate = { candidateId: randomUUID(), scope: observation.scope, dimension: observation.dimension, value: observation.value, statement: observation.statement, confidence: observation.confidence, evidenceCount: 0, sourceAgents: [], observationIds: [], status: "candidate", updatedAt: observation.createdAt };
+        candidate = { candidateId: randomUUID(), scope: observation.scope, dimension: observation.dimension, value: observation.value, statement: observation.statement, confidence: observation.confidence, evidenceCount: 0, sourceAgents: [], sourceContexts: [], observationIds: [], portability: observation.portability ?? "unknown", status: "candidate", updatedAt: observation.createdAt };
         candidates.push(candidate);
       }
       candidate.evidenceCount += 1;
       candidate.confidence = aggregateConfidence(candidate.confidence, observation.confidence, candidate.evidenceCount);
       if (!candidate.sourceAgents.includes(observation.agentId)) candidate.sourceAgents.push(observation.agentId);
+      const context = `${observation.agentId}|${observation.purpose ?? observation.scope}`;
+      candidate.sourceContexts ??= [];
+      if (!candidate.sourceContexts.includes(context)) candidate.sourceContexts.push(context);
+      candidate.portability = candidate.sourceAgents.length >= 2 ? "portable" : (observation.portability ?? "agent_specific");
       candidate.observationIds.push(observation.observationId);
       candidate.updatedAt = observation.createdAt;
       await this.writeJson(this.candidatesPath, candidates);
@@ -55,7 +59,8 @@ export class LearningEngine {
     return (await this.listCandidates()).map((candidate) => {
       const ageDays = Math.max(0, (now.getTime() - new Date(candidate.updatedAt).getTime()) / 86_400_000);
       const effectiveConfidence = decayConfidence(candidate.confidence, ageDays);
-      return { candidate, effectiveConfidence, ageDays, promotable: candidate.status === "candidate" && candidate.evidenceCount >= minEvidence && effectiveConfidence >= minConfidence };
+      const portability = candidate.portability ?? (candidate.sourceAgents.length >= 2 ? "portable" : "agent_specific");
+      return { candidate: { ...candidate, portability }, effectiveConfidence, ageDays, promotable: portability === "portable" && candidate.status === "candidate" && candidate.evidenceCount >= minEvidence && effectiveConfidence >= minConfidence };
     });
   }
   async getCandidate(candidateId: string): Promise<TraitCandidate> {
@@ -113,6 +118,14 @@ export class LearningEngine {
     for (const [key, group] of groups) {
       const distinct = group.filter((candidate) => candidate.evidenceCount > 0);
       if (distinct.length < 2) continue;
+      // Different Agents can intentionally have different interaction styles.
+      // Only overlapping provenance is a true unresolved conflict.
+      const hasSharedContext = distinct.some((left, index) => distinct.slice(index + 1).some((right) => {
+        const leftContexts = left.sourceContexts ?? left.sourceAgents.map((agent) => `${agent}|${left.scope}`);
+        const rightContexts = right.sourceContexts ?? right.sourceAgents.map((agent) => `${agent}|${right.scope}`);
+        return leftContexts.some((context) => rightContexts.includes(context));
+      }));
+      if (!hasSharedContext) continue;
       const [scope, dimension] = key.split("|");
       const ids = distinct.map((candidate) => candidate.candidateId).sort();
       const existing = active.find((conflict) => conflict.scope === scope && conflict.dimension === dimension && sameIds(conflict.candidateIds, ids));
