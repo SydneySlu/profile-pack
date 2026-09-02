@@ -98,6 +98,12 @@ profile-pack session-end --session-file session.json --file transcript.txt
 
 Candidate confidence is time-decayed with a 90-day half-life; old observations remain in the append-only log but become less likely to be promoted without fresh evidence. Review a JSON snapshot with `profile-pack review`, or use `profile-pack review --interactive` for a terminal workflow. The MCP equivalent is `get_learning_snapshot`.
 
+## Response evaluation
+
+Use `profile-pack eval --file response.txt --scope coding` to check hard safety rules before accepting an Agent response. The evaluator flags explicit profile references, single-attribute attribution, and exact sensitive-content leakage. It intentionally leaves holistic quality as a human-review warning rather than pretending to measure the model's hidden reasoning.
+
+Host integration examples are in `docs/integration/codex.md`, `docs/integration/claude-code.md`, and `adapters/mcp-config.example.json`.
+
 ## Git identity setup
 
 The commit error came from Git not knowing the author identity. Configure it once for your macOS user account in a terminal:

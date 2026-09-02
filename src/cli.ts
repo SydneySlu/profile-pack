@@ -10,6 +10,7 @@ import { createExtractorFromEnv, observationsToInput } from "./extractor.js";
 import { filterAutomaticObservations } from "./safety.js";
 import { SessionManager } from "./session.js";
 import { runReview } from "./review.js";
+import { evaluateResponse } from "./eval.js";
 
 const rootDir = process.env.PROFILE_PACK_DIR ?? join(homedir(), ".profile-pack");
 const store = new ProfileStore(rootDir);
@@ -52,6 +53,7 @@ async function main(): Promise<void> {
     console.log(JSON.stringify(await store.propose(update, "cli"), null, 2)); return;
   }
   if (command === "review") { if (args.includes("--interactive")) { await runReview(store, learning); } else console.log(JSON.stringify({ proposals: await store.listProposals(), candidates: await learning.listCandidateSummaries(), conflicts: await learning.listConflicts() }, null, 2)); return; }
+  if (command === "eval") { const file = option("--file"); if (!file) throw new Error("Usage: profile-pack eval --file response.txt [--scope coding]"); const profile = await store.getProfile(); const view = await store.getView([option("--scope", "global")!], "cli", "response_evaluation"); console.log(JSON.stringify(evaluateResponse(await readFile(file, "utf8"), profile, view.items), null, 2)); return; }
   if (command === "promote") {
     const candidateId = option("--candidate-id");
     if (!candidateId) throw new Error("Usage: profile-pack promote --candidate-id <id>");
