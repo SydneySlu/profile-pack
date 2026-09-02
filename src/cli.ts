@@ -1,12 +1,14 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { ProfileStore } from "./store.js";
 import type { ProfileUpdate } from "./types.js";
 import { runOnboarding } from "./onboarding.js";
 import { LearningEngine } from "./learning.js";
 import { createExtractorFromEnv, observationsToInput } from "./extractor.js";
 import { filterAutomaticObservations } from "./safety.js";
+import { SessionManager } from "./session.js";
 
 const rootDir = process.env.PROFILE_PACK_DIR ?? join(homedir(), ".profile-pack");
 const store = new ProfileStore(rootDir);
@@ -27,6 +29,18 @@ async function main(): Promise<void> {
     const results = [];
     for (const observation of filtered.accepted) results.push(await learning.observe(observationsToInput(observation, option("--agent-id", "cli")!)));
     console.log(JSON.stringify({ extractedCount: filtered.accepted.length, blockedCount: filtered.blocked.length, blocked: filtered.blocked, results }, null, 2));
+    return;
+  }
+  if (command === "session-start") { await store.ensure(); const session = { sessionId: randomUUID(), agentId: option("--agent-id", "cli")!, scope: option("--scope", "global")!, purpose: option("--purpose"), startedAt: new Date().toISOString() }; console.log(JSON.stringify(session, null, 2)); return; }
+  if (command === "session-end") {
+    const file = option("--file");
+    if (!file) throw new Error("Usage: profile-pack session-end --file transcript.txt --session-file session.json");
+    const sessionFile = option("--session-file");
+    if (!sessionFile) throw new Error("Usage: profile-pack session-end --file transcript.txt --session-file session.json");
+    const session = JSON.parse(await readFile(sessionFile, "utf8"));
+    const transcript = await readFile(file, "utf8");
+    const manager = new SessionManager(learning, createExtractorFromEnv());
+    console.log(JSON.stringify(await manager.end(session, transcript), null, 2));
     return;
   }
   if (command === "status" || !command) { console.log(JSON.stringify(await store.status(), null, 2)); return; }

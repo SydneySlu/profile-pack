@@ -83,6 +83,17 @@ Sensitive items are filtered unless an explicit read request includes `includeSe
 
 Agents can call `record_profile_observation` with a scope, dimension, value, confidence, and evidence. Observations are aggregated into `candidates.json`; differing values for the same scope and dimension appear in `conflicts.json`. Neither candidates nor conflicts modify the official profile automatically. After review, `promote_trait_candidate` turns a candidate into a normal profile proposal; the user must still confirm that proposal before it becomes official.
 
+## Session lifecycle
+
+Hosts that can retain tool results should call `profile_session_start` before a task and `profile_session_end` after a meaningful task. This removes the need for the user to remember a separate reflection command. If a host cannot provide an end-of-session hook, `profile_reflect` and the CLI `learn --file ...` remain available. Missing a reflection call affects only how quickly the profile learns; reading the existing profile and normal Agent use continue to work.
+
+CLI equivalent:
+
+```bash
+profile-pack session-start --agent-id codex --scope coding --purpose coding_task > session.json
+profile-pack session-end --session-file session.json --file transcript.txt
+```
+
 ## Git identity setup
 
 The commit error came from Git not knowing the author identity. Configure it once for your macOS user account in a terminal:
