@@ -82,3 +82,40 @@ export interface AgentPolicy {
   allowedScopes: string[];
   allowSensitive: boolean;
 }
+
+export interface ProfileObservation {
+  observationId: string;
+  agentId: string;
+  scope: string;
+  dimension: string;
+  value: string;
+  statement: string;
+  confidence: number;
+  evidence?: string;
+  createdAt: string;
+}
+
+export interface TraitCandidate {
+  candidateId: string;
+  scope: string;
+  dimension: string;
+  value: string;
+  statement: string;
+  confidence: number;
+  evidenceCount: number;
+  sourceAgents: string[];
+  observationIds: string[];
+  status: "candidate" | "promoted" | "dismissed";
+  updatedAt: string;
+}
+
+export interface TraitConflict {
+  conflictId: string;
+  scope: string;
+  dimension: string;
+  candidateIds: string[];
+  reason: string;
+  status: "open" | "resolved" | "dismissed";
+  resolution?: "keep_left" | "keep_right" | "keep_both" | "dismiss";
+  updatedAt: string;
+}

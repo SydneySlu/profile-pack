@@ -12,9 +12,10 @@ Version `0.1.0` provides:
 - global/domain scopes and sensitive-item filtering;
 - MCP tools and resources for Claude Code, Codex, and other MCP clients;
 - JSON export for migration;
+- multi-Agent observation aggregation and same-dimension conflict detection;
 - tests for onboarding state, proposal review, privacy filtering, and concurrent writes.
 
-This is an MVP foundation. It does not yet infer traits automatically and does not expose a remote network endpoint.
+This remains an MVP foundation. Agents must submit distilled observations; a model-specific extractor is not bundled yet. The daemon is local-only.
 
 ## Run locally
 
@@ -46,7 +47,11 @@ Configure the MCP client to launch `npm run mcp` from this repository, or use th
 
 Agents submit observations as proposals. A proposal is not part of the official profile until the user confirms it. The append-only `events.jsonl` file is the source of change history; `profile.json` is the current materialized view. `agents.json` defines local Agent scope policies; unknown Agents are limited to the global scope and cannot read sensitive items.
 
-Sensitive items are filtered unless an explicit read request includes `includeSensitive: true`. For real user data, keep the Profile Pack in a private directory or private repository; public GitHub repositories should contain only templates.
+Sensitive items are filtered unless an explicit read request includes `includeSensitive: true`. For real user data, keep the Profile Pack in a private directory or private repository; public GitHub repositories should contain only templates. 
+
+## Learning flow
+
+Agents can call `record_profile_observation` with a scope, dimension, value, confidence, and evidence. Observations are aggregated into `candidates.json`; differing values for the same scope and dimension appear in `conflicts.json`. Neither candidates nor conflicts modify the official profile automatically. The user must decide what to keep, and a later promotion workflow will turn accepted candidates into profile proposals.
 
 ## Git identity setup
 
