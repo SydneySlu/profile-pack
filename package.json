@@ -9,7 +9,8 @@
     "test": "node --test --import tsx test/**/*.test.ts",
     "dev": "tsx src/cli.ts",
     "mcp": "tsx src/mcp.ts",
-    "daemon": "tsx src/daemon.ts"
+    "daemon": "tsx src/daemon.ts",
+    "web": "tsx src/web.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.5",
