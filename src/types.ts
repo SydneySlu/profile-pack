@@ -119,3 +119,10 @@ export interface TraitConflict {
   resolution?: "keep_left" | "keep_right" | "keep_both" | "dismiss";
   updatedAt: string;
 }
+
+export interface TraitCandidateSummary {
+  candidate: TraitCandidate;
+  effectiveConfidence: number;
+  ageDays: number;
+  promotable: boolean;
+}

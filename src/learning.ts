@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, open, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { ProfileObservation, TraitCandidate, TraitConflict } from "./types.js";
+import type { ProfileObservation, TraitCandidate, TraitCandidateSummary, TraitConflict } from "./types.js";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -50,7 +50,14 @@ export class LearningEngine {
   }
 
   async listCandidates(): Promise<TraitCandidate[]> { await this.ensure(); return this.readCandidates(); }
-  async listPromotableCandidates(minEvidence = 2, minConfidence = 0.7): Promise<TraitCandidate[]> { return (await this.listCandidates()).filter((candidate) => candidate.status === "candidate" && candidate.evidenceCount >= minEvidence && candidate.confidence >= minConfidence); }
+  async listPromotableCandidates(minEvidence = 2, minConfidence = 0.7): Promise<TraitCandidate[]> { return (await this.listCandidateSummaries(minEvidence, minConfidence)).filter((summary) => summary.promotable).map((summary) => summary.candidate); }
+  async listCandidateSummaries(minEvidence = 2, minConfidence = 0.7, now = new Date()): Promise<TraitCandidateSummary[]> {
+    return (await this.listCandidates()).map((candidate) => {
+      const ageDays = Math.max(0, (now.getTime() - new Date(candidate.updatedAt).getTime()) / 86_400_000);
+      const effectiveConfidence = decayConfidence(candidate.confidence, ageDays);
+      return { candidate, effectiveConfidence, ageDays, promotable: candidate.status === "candidate" && candidate.evidenceCount >= minEvidence && effectiveConfidence >= minConfidence };
+    });
+  }
   async getCandidate(candidateId: string): Promise<TraitCandidate> {
     const candidate = (await this.readCandidates()).find((item) => item.candidateId === candidateId);
     if (!candidate) throw new Error(`Candidate not found: ${candidateId}`);
@@ -131,4 +138,5 @@ export class LearningEngine {
 function normalize(value: string): string { return value.trim().toLocaleLowerCase(); }
 function clamp(value: number): number { return Math.max(0, Math.min(1, value)); }
 function aggregateConfidence(previous: number, incoming: number, count: number): number { return clamp(previous + (incoming - previous) / count); }
+export function decayConfidence(confidence: number, ageDays: number, halfLifeDays = 90): number { return clamp(confidence * Math.pow(0.5, Math.max(0, ageDays) / halfLifeDays)); }
 function sameIds(a: string[], b: string[]): boolean { return a.length === b.length && a.every((value, index) => value === b[index]); }

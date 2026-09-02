@@ -94,6 +94,10 @@ profile-pack session-start --agent-id codex --scope coding --purpose coding_task
 profile-pack session-end --session-file session.json --file transcript.txt
 ```
 
+## Candidate quality and review
+
+Candidate confidence is time-decayed with a 90-day half-life; old observations remain in the append-only log but become less likely to be promoted without fresh evidence. Review a JSON snapshot with `profile-pack review`, or use `profile-pack review --interactive` for a terminal workflow. The MCP equivalent is `get_learning_snapshot`.
+
 ## Git identity setup
 
 The commit error came from Git not knowing the author identity. Configure it once for your macOS user account in a terminal:
