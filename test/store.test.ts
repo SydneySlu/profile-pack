@@ -32,6 +32,15 @@ test("sensitive items are hidden by default", async () => {
   assert.equal((await store.getView(["global"], "user", undefined, true)).items.length, 2);
 });
 
+test("explicit user export can include sensitive items", async () => {
+  const store = new ProfileStore(await mkdtemp(join(tmpdir(), "profile-export-")));
+  await store.initialize([{ kind: "fact", scope: "global", statement: "公开资料" }, { kind: "fact", scope: "global", statement: "敏感资料", sensitivity: "sensitive" }], "user");
+  const safe = await store.exportBundle();
+  const full = await store.exportBundle([], true);
+  assert.equal((safe.profile as { items: Array<{ statement: string }> }).items.some((item) => item.statement === "敏感资料"), false);
+  assert.equal((full.profile as { items: Array<{ statement: string }> }).items.some((item) => item.statement === "敏感资料"), true);
+});
+
 test("concurrent proposals preserve all events", async () => {
   const store = await makeStore();
   await Promise.all(Array.from({ length: 10 }, (_, i) => store.propose({ kind: "trait", scope: "coding", statement: `trait-${i}`, evidenceCount: 2 }, `agent-${i}`)));

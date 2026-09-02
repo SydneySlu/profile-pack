@@ -145,7 +145,9 @@ export class ProfileStore {
   }
 
   async exportBundle(scopes: string[] = [], includeSensitive = false): Promise<Record<string, unknown>> {
-    const view = await this.getView(scopes, "export", "profile_export", includeSensitive);
+    // Export is an explicit user action, so use the user policy rather than an
+    // unknown Agent policy. Sensitive data is still excluded unless requested.
+    const view = await this.getView(scopes, "user", "profile_export", includeSensitive);
     return { manifest: { schemaVersion: view.profile.schemaVersion, profileId: view.profile.profileId, exportedAt: new Date().toISOString(), scopes }, profile: { ...view.profile, items: view.items } };
   }
 

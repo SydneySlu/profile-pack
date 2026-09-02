@@ -18,6 +18,7 @@ const html = String.raw`<!doctype html>
 <h1>AI Me · Profile Pack</h1><div class="muted">本地管理界面（默认只绑定 127.0.0.1，不展示敏感字段）</div>
 <section><h2>状态</h2><pre id="status">加载中…</pre></section>
 <section><h2>正式画像</h2><pre id="profile">加载中…</pre></section>
+<section><h2>迁移导出</h2><div class="muted">默认导出通用非敏感资料；完整导出会包含敏感字段，请确认后再下载。</div><div class="row"><button onclick="downloadBundle(false)">导出通用 Profile</button><button onclick="downloadBundle(true)">导出完整 Profile（含敏感）</button></div></section>
 <section><h2>版本与差异</h2><div id="versions">加载中…</div><div class="row"><label>从 <select id="fromVersion"></select></label><label>到 <select id="toVersion"></select></label><button onclick="compareVersions()">查看差异</button><button onclick="rollbackVersion()">回滚到指定版本</button></div><pre id="diff">请选择两个版本查看差异</pre></section>
 <section><h2>Agent 敏感字段授权</h2><div class="muted">逐项授权只允许选中的 Agent 读取对应敏感字段；默认仍然全部隐藏。</div><div id="agents">加载中…</div></section>
 <section><h2>候选特质</h2><div id="candidates">加载中…</div></section>
@@ -30,6 +31,7 @@ async function act(path, payload) { await api(path, { method:'POST', headers:{'c
 async function rollbackVersion() { const version = prompt('请输入要恢复的版本号'); if (version) await act('/api/versions/rollback', { version:Number(version) }); }
 async function compareVersions() { const from=Number(document.querySelector('#fromVersion').value), to=Number(document.querySelector('#toVersion').value); if (from && to) document.querySelector('#diff').textContent=JSON.stringify(await api('/api/versions/compare?from='+from+'&to='+to), null, 2); }
 async function grant(agentId) { const ids=[...document.querySelectorAll('input[data-agent="'+agentId+'"]:checked')].map((input)=>input.value); await act('/api/agents/'+encodeURIComponent(agentId)+'/sensitive', { itemIds:ids }); }
+async function downloadBundle(includeSensitive) { if(includeSensitive&&!confirm('完整导出将包含敏感字段，确定继续吗？')) return; const bundle=await api('/api/export',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({includeSensitive})}); const blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'}); const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download='profile-pack-'+(includeSensitive?'full':'portable')+'.json'; link.click(); URL.revokeObjectURL(link.href); }
 async function load() {
   try {
     document.querySelector('#status').textContent=JSON.stringify(await api('/api/status'), null, 2);
@@ -68,6 +70,7 @@ const server=createServer(async (req: IncomingMessage,res: ServerResponse)=>{ tr
   if(req.method==="POST"&&segments[1]==="conflicts"&&segments[3]==="resolve"){const p=await body(req);sendJson(res,await learning.resolveConflict(segments[2]!,p.resolution as "keep_left"|"keep_right"|"keep_both"|"dismiss"));return;}
   if(req.method==="POST"&&segments[1]==="versions"&&segments[2]==="rollback"){const p=await body(req);sendJson(res,await store.rollback(Number(p.version)));return;}
   if(req.method==="POST"&&segments[1]==="agents"&&segments[3]==="sensitive"){const p=await body(req);sendJson(res,await store.setAgentSensitiveItems(decodeURIComponent(segments[2]!),Array.isArray(p.itemIds)?p.itemIds as string[]:[]));return;}
+  if(req.method==="POST"&&path==="/api/export"){const p=await body(req);sendJson(res,await store.exportBundle([],p.includeSensitive===true));return;}
   sendJson(res,{error:"Not found"},404);
 } catch(error){sendJson(res,{error:error instanceof Error?error.message:String(error)},500);} });
 server.listen(port,host,()=>console.error(`Profile Pack web UI listening on http://${host}:${port}`));
