@@ -1,0 +1,22 @@
+{
+  "name": "profile-pack",
+  "version": "0.1.0",
+  "private": true,
+  "description": "User-owned, portable AI context with a local MCP server.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test --import tsx test/**/*.test.ts",
+    "dev": "tsx src/cli.ts",
+    "mcp": "tsx src/mcp.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
