@@ -6,6 +6,8 @@ Profile Pack is the first AI Me prototype: a user-owned, portable context layer 
 
 Profile Pack treats a user's profile as a controllable AI context asset rather than a traditional knowledge base. Agents can read the context they need, propose learning-based updates, and reuse only the information that the user has approved for migration.
 
+Repository: <https://github.com/SydneySlu/profile-pack>
+
 ## Current status
 
 Version `0.1.0` provides:
