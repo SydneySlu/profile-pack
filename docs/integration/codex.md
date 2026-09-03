@@ -5,6 +5,8 @@
 3. Replace both absolute paths.
 4. Use the Codex adapter at `adapters/codex/SKILL.md`.
 
+The native Codex configuration uses TOML. Copy `adapters/codex-config.example.toml` into `/Users/syd/.codex/config.toml` and replace the two placeholders. This is a stdio configuration and is the safest first connection; the shared HTTP daemon can be enabled later.
+
 For a token-protected Agent, add the token to the host's private MCP environment/configuration and pass it to `get_profile` and `profile_session_start`. Do not commit the token or put it in a shared repository. The shared local daemon can be used by both Codex and Claude Code; each should have a separate `agentId` and (optionally) separate token.
 
 For multiple local Agents, run the shared daemon and configure each host for `http://127.0.0.1:8765/mcp` if that host supports Streamable HTTP. Stdio is the compatibility fallback.

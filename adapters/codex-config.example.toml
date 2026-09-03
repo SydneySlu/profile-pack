@@ -1,0 +1,8 @@
+# Add this block to ~/.codex/config.toml after replacing the two paths.
+# Keep PROFILE_PACK_DIR private; do not commit tokens or personal data.
+[mcp_servers.profile_pack]
+command = "npm"
+args = ["--prefix", "/ABSOLUTE/PATH/TO/profile-pack", "run", "mcp"]
+
+[mcp_servers.profile_pack.env]
+PROFILE_PACK_DIR = "/ABSOLUTE/PATH/TO/.profile-pack"
