@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "0.1",
+  "profileId": "template-profile-id",
+  "version": 0,
+  "initialized": false,
+  "createdAt": "",
+  "updatedAt": "",
+  "items": [],
+  "presentationPolicy": {
+    "mode": "implicit_personalization",
+    "avoid": [
+      "直接点出画像标签作为回答依据",
+      "使用单个画像字段解释用户",
+      "在用户未询问时主动提及敏感属性"
+    ],
+    "prefer": [
+      "综合多个相关维度形成回答",
+      "把画像作为背景而不是话题",
+      "不确定时询问而不是擅自推断"
+    ]
+  }
+}
