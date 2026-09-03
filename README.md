@@ -2,6 +2,10 @@
 
 Profile Pack is the first AI Me prototype: a user-owned, portable context layer for multiple AI agents.
 
+> **MVP status (September 2026)** · The local MVP is implemented and tested. It is ready for local evaluation with Codex, Claude Code, and other MCP clients; it is not yet a hosted service or a production multi-user platform.
+
+Profile Pack treats a user's profile as a controllable AI context asset rather than a traditional knowledge base. Agents can read the context they need, propose learning-based updates, and reuse only the information that the user has approved for migration.
+
 ## Current status
 
 Version `0.1.0` provides:
@@ -16,7 +20,16 @@ Version `0.1.0` provides:
 - Agent-specific interaction preferences separated from portable user traits;
 - tests for onboarding state, proposal review, privacy filtering, and concurrent writes.
 
-This remains an MVP foundation. It includes configurable Ollama and OpenAI-compatible extractors, and still supports direct structured observations as a no-model fallback. The daemon is local-only.
+As of this milestone, the repository contains **24 passing automated tests** covering onboarding, profile proposals, learning aggregation, privacy permissions, concurrent writes, migration, version rollback, and response evaluation. It includes configurable Ollama and OpenAI-compatible extractors, while direct structured observations remain available as a no-model fallback. The daemon and management UI are intentionally local-only.
+
+### What is intentionally not included yet
+
+- no hosted account system, remote authentication, or multi-user tenancy;
+- no automatic promotion of observations into the official profile;
+- no semantic LLM conflict judge: Agent-specific context and portable traits are separated by explicit scope and evidence rules first;
+- no personal profile data in this public repository.
+
+The next iteration will focus on a small end-to-end demo profile, host-specific installation guidance, and longer-running evaluation across real Codex and Claude Code sessions. Live user data belongs in a private directory such as `/Users/syd/.profile-pack`, which is ignored by Git.
 
 ## LLM extraction providers
 
