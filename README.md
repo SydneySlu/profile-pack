@@ -138,6 +138,8 @@ Host-specific templates are also available: `adapters/codex-config.example.toml`
 
 The blank, Git-safe Profile Pack template is in `templates/profile-pack/`. It contains no personal information. Live Profile data belongs in a private directory such as `/Users/syd/.profile-pack`, which is ignored by Git.
 
+A fictional end-to-end migration fixture is available at `examples/demo-profile-pack.json`. To import it into a test directory, set `PROFILE_PACK_DIR` to that directory and run `npm run dev -- import --file examples/demo-profile-pack.json`. It contains only the fictional user “Alex”.
+
 ## Profile versions and rollback
 
 Every official Profile update creates an immutable snapshot under `snapshots/`. Use `profile-pack versions` to list snapshots, `profile-pack compare --from 1 --to 2` to inspect changes, and `profile-pack rollback --version 1` to restore an older state as a new version. Rollback never deletes the intervening history.

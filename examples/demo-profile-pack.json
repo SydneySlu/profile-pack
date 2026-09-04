@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "schemaVersion": "0.1",
+    "profileId": "demo-source-profile",
+    "exportedAt": "2026-09-04T00:00:00.000Z",
+    "scopes": ["global", "learning", "coding"]
+  },
+  "profile": {
+    "schemaVersion": "0.1",
+    "profileId": "demo-source-profile",
+    "version": 1,
+    "initialized": true,
+    "createdAt": "2026-09-04T00:00:00.000Z",
+    "updatedAt": "2026-09-04T00:00:00.000Z",
+    "items": [
+      {"id":"demo-name","kind":"fact","scope":"global","statement":"示例用户希望被称为 Alex","sensitivity":"normal","confidence":1,"evidenceCount":1,"sourceAgents":["demo"],"createdAt":"2026-09-04T00:00:00.000Z","updatedAt":"2026-09-04T00:00:00.000Z"},
+      {"id":"demo-style","kind":"preference","scope":"global","statement":"示例用户偏好先说明方案，再执行","sensitivity":"normal","confidence":1,"evidenceCount":1,"sourceAgents":["demo"],"createdAt":"2026-09-04T00:00:00.000Z","updatedAt":"2026-09-04T00:00:00.000Z"},
+      {"id":"demo-learning","kind":"preference","scope":"learning","statement":"示例用户在学习场景偏好详细解释","sensitivity":"normal","confidence":1,"evidenceCount":1,"sourceAgents":["demo"],"createdAt":"2026-09-04T00:00:00.000Z","updatedAt":"2026-09-04T00:00:00.000Z"},
+      {"id":"demo-coding","kind":"preference","scope":"coding","statement":"示例用户在编程场景偏好简洁结果","sensitivity":"normal","confidence":1,"evidenceCount":1,"sourceAgents":["demo"],"createdAt":"2026-09-04T00:00:00.000Z","updatedAt":"2026-09-04T00:00:00.000Z"}
+    ],
+    "presentationPolicy": {
+      "mode":"implicit_personalization",
+      "avoid":["直接点出画像标签作为回答依据","使用单个画像字段解释用户"],
+      "prefer":["综合多个相关维度形成回答","把画像作为背景而不是话题"]
+    }
+  }
+}

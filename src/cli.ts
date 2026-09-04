@@ -73,6 +73,7 @@ async function main(): Promise<void> {
     return;
   }
   if (command === "export") { console.log(JSON.stringify(await store.exportBundle(), null, 2)); return; }
+  if (command === "import") { const file = option("--file"); if (!file) throw new Error("Usage: profile-pack import --file bundle.json"); console.log(JSON.stringify(await store.importBundle(JSON.parse(await readFile(file, "utf8")), "cli-migration"), null, 2)); return; }
   throw new Error(`Unknown command: ${command}`);
 }
 
