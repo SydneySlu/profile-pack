@@ -33,6 +33,8 @@ As of this milestone, the repository contains **24 passing automated tests** cov
 
 The next iteration will focus on a small end-to-end demo profile, host-specific installation guidance, and longer-running evaluation across real Codex and Claude Code sessions. Live user data belongs in a private directory such as `/Users/syd/.profile-pack`, which is ignored by Git.
 
+The cross-Agent evaluation protocol is documented in `docs/evaluation/cross-agent.md`.
+
 ## LLM extraction providers
 
 The MCP tool `extract_profile_observations` supports two providers:
