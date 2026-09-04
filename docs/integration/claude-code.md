@@ -5,7 +5,7 @@
 3. Replace both absolute paths.
 4. Use the Claude Code adapter at `adapters/claude-code/SKILL.md`.
 
-The Claude-3p UI's “Edit config” opens the JSON MCP configuration. Copy the `mcpServers.profile-pack` entry from `adapters/claude-config.example.json` into the existing config rather than replacing unrelated settings. If the UI is currently showing no servers, that is expected before this entry is added.
+The Claude-3p UI's “Edit config” opens the JSON MCP configuration. Copy the `mcpServers.profile-pack` entry from `adapters/claude-config.example.json` into the existing config rather than replacing unrelated settings. The template launches the built Node entrypoint directly because STDIO servers must keep stdout exclusively for MCP messages. Run `npm run build` after source changes, then restart Claude-3p.
 
 For a token-protected Agent, keep the token in Claude Code's private MCP configuration and pass it to `get_profile` and `profile_session_start`. Use a distinct `agentId` from Codex so permissions and audit entries remain separable.
 

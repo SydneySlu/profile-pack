@@ -99,7 +99,7 @@ Open `http://127.0.0.1:8787`. The UI shows the non-sensitive profile, candidates
 
 The UI also provides version comparison, per-item sensitive-field grants, and explicit migration export. “通用 Profile” excludes sensitive fields; “完整 Profile” requires a confirmation dialog. A grant only changes the selected Agent policy; the Agent must still request `includeSensitive: true` and authenticate with its token. The same permission operation is available from the CLI: `profile-pack agents` and `profile-pack authorize-sensitive --agent-id codex --item-ids <id1,id2>`.
 
-Configure the MCP client to launch `npm run mcp` from this repository, or use the built `dist/src/mcp.js` after `npm run build`.
+For STDIO clients, configure the built entrypoint `dist/src/mcp.js` directly after `npm run build`. Avoid configuring `npm run mcp`: npm may print startup text to stdout, which violates MCP's STDIO JSON-RPC framing and can make a host report that the server is unavailable.
 
 ## Data model
 

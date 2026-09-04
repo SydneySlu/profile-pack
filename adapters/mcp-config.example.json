@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "profile-pack": {
-      "command": "npm",
-      "args": ["--prefix", "/ABSOLUTE/PATH/TO/profile-pack", "run", "mcp"],
+      "command": "/opt/homebrew/bin/node",
+      "args": ["/ABSOLUTE/PATH/TO/profile-pack/dist/src/mcp.js"],
       "env": {
         "PROFILE_PACK_DIR": "/ABSOLUTE/PATH/TO/.profile-pack",
         "PROFILE_PACK_LLM_PROVIDER": "ollama",
