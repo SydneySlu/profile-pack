@@ -7,7 +7,7 @@ Use the same prompts in Codex (`agentId: codex`) and Claude Code (`agentId: clau
 Ask each host:
 
 ```text
-调用 profile_status，然后调用 get_profile。使用你自己的 agentId，scope 为 global 和 coding，purpose 为 cross_agent_evaluation。不要修改任何 Profile 数据。
+调用 profile_status，然后调用 get_profile_context。使用你自己的 agentId，scope 为 global 和 coding，purpose 为 cross_agent_evaluation。不要修改任何 Profile 数据，也不要在回答中列出 Profile 字段。
 ```
 
 Expected: both hosts report the same Profile version and six approved items.
