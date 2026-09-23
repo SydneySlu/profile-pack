@@ -146,6 +146,97 @@ export interface DecisionEvaluation {
   message: string;
 }
 
+export type ProjectStatus = "idea" | "planned" | "active" | "paused" | "completed" | "archived";
+export type ProjectItemStatus = "pending" | "in_progress" | "blocked" | "done" | "cancelled";
+
+export interface ProjectMilestone {
+  id: string;
+  title: string;
+  status: ProjectItemStatus;
+  dueAt?: string;
+  notes?: string;
+}
+
+export interface ProjectTask {
+  id: string;
+  title: string;
+  status: ProjectItemStatus;
+  priority?: "low" | "medium" | "high";
+  dueAt?: string;
+  notes?: string;
+}
+
+export interface ProjectDecision {
+  id: string;
+  title: string;
+  decision: string;
+  rationale?: string;
+  createdAt: string;
+}
+
+export interface ProjectRisk {
+  id: string;
+  title: string;
+  severity: "low" | "medium" | "high";
+  mitigation?: string;
+  status: "open" | "mitigated" | "accepted";
+}
+
+export interface ProjectProfile {
+  schemaVersion: "0.1";
+  projectId: string;
+  name: string;
+  description: string;
+  goal: string;
+  status: ProjectStatus;
+  tags: string[];
+  constraints: string[];
+  milestones: ProjectMilestone[];
+  tasks: ProjectTask[];
+  decisions: ProjectDecision[];
+  risks: ProjectRisk[];
+  allowedAgents: string[];
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectCreateInput {
+  name: string;
+  description?: string;
+  goal: string;
+  status?: ProjectStatus;
+  tags?: string[];
+  constraints?: string[];
+  allowedAgents?: string[];
+}
+
+export interface ProjectUpdatePatch {
+  name?: string;
+  description?: string;
+  goal?: string;
+  status?: ProjectStatus;
+  tags?: string[];
+  constraints?: string[];
+  milestones?: ProjectMilestone[];
+  tasks?: ProjectTask[];
+  decisions?: ProjectDecision[];
+  risks?: ProjectRisk[];
+}
+
+export interface ProjectProposal {
+  proposalId: string;
+  projectId: string;
+  baseVersion: number;
+  patch: ProjectUpdatePatch;
+  reason?: string;
+  evidence?: string[];
+  agentId: string;
+  status: "proposed" | "confirmed" | "rejected" | "stale";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProfileObservation {
   observationId: string;
   agentId: string;

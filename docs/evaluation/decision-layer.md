@@ -19,6 +19,10 @@ Freshness is currently limited to explicit `expiresAt`; there is no age-based st
 
 `evaluate_decision_candidates` accepts 2-3 candidates supplied by the host Agent. The deterministic RuleEvaluator assigns a transparent heuristic score using goal relevance (30%), feasibility (35%), risk (15%), and per-candidate Profile fit (20%); an explicit time-limit conflict blocks recommendation. It only expresses a preference when the top candidate leads by at least 0.05; ties or weak evidence are returned for user judgment. Every result states that the user must confirm. These weights are initial product rules, not a claim of calibrated decision quality. No decision result is persisted yet, and user feedback is not yet collected.
 
+## Project Profile slice
+
+Project data is stored separately under `.profile-pack/projects/<projectId>/`; the personal `profile.json` schema and contents are untouched. Project records have their own lifecycle, tasks, milestones, decisions, risks, allowed-Agent list, event log, and version snapshots. Agents may propose updates; confirmation is user-only, applies only when the proposal's base version is still current, and creates a new version. A stale proposal is retained but not applied. This local MVP does not provide remote multi-user identity; Agent IDs and allowlists are host-local controls.
+
 This is a retrieval gate, not a recommender. It does not call an LLM, create candidate plans, or change the Profile.
 
 ## Next call chain

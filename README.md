@@ -48,6 +48,8 @@ PROFILE_PACK_DIR="$HOME/.profile-pack" npm run dev -- decision-context --goal "ä
 
 The host Agent generates 2-3 candidates; `evaluate_decision_candidates` applies a deterministic, transparent RuleEvaluator and flags explicit time-limit conflicts. It never makes the final decision or modifies the Profile. Candidate generation remains the host's responsibility. Decision persistence and user feedback are not implemented yet. See `docs/evaluation/decision-layer.md` for the implementation boundary.
 
+Project work context is stored as a separate Project Profile under `.profile-pack/projects/`, not mixed into the personal Profile schema. MCP tools support project creation, access allowlists, context reads, update proposals, and user confirmation/rejection. Confirmed updates create a new project version; stale proposals are not applied. This is a local single-user control model, not remote identity or multi-user security.
+
 ## LLM extraction providers
 
 The MCP tool `extract_profile_observations` supports two providers:
