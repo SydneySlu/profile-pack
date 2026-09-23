@@ -46,7 +46,7 @@ The same gate is available without MCP:
 PROFILE_PACK_DIR="$HOME/.profile-pack" npm run dev -- decision-context --goal "为个人 AI Agent 项目选择技术方案" --context "需要规划第一版" --constraint "时间有限" --agent-id codex
 ```
 
-The current phase does not generate candidates, record user decisions, or update the official Profile automatically. Those belong to the next decision-layer phase. See `docs/evaluation/decision-layer.md` for the implementation boundary.
+The host Agent generates 2-3 candidates; `evaluate_decision_candidates` applies a deterministic, transparent RuleEvaluator and flags explicit time-limit conflicts. It never makes the final decision or modifies the Profile. Candidate generation remains the host's responsibility. Decision persistence and user feedback are not implemented yet. See `docs/evaluation/decision-layer.md` for the implementation boundary.
 
 ## LLM extraction providers
 

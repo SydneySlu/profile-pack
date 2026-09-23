@@ -15,7 +15,6 @@ test("decision retrieval returns relevant evidence and missing constraints", () 
   const result = retrieveDecisionContext(profile, profile.items.slice(0, 2), request);
   assert.equal(result.personalized, true);
   assert.ok(result.evidence.some((entry) => entry.item.id === "p1"));
-  assert.ok(result.missingInformation.some((item) => item.includes("长期目标")) === false);
 });
 
 test("decision output never echoes an Agent token", () => {
@@ -29,7 +28,14 @@ test("irrelevant sensitive fields are not selected by the gate", () => {
 });
 
 test("no related context is explicitly marked as generic", () => {
-  const result = retrieveDecisionContext(profile, profile.items, { ...request, goal: "今天晚餐吃什么", taskContext: "只需要一个随机建议", constraints: [] });
+  const result = retrieveDecisionContext(profile, profile.items, { ...request, goal: "今天晚餐吃什么", taskContext: "只需要一个随机建议", taskType: "casual", constraints: [] });
   assert.equal(result.personalized, false);
   assert.match(result.message, /通用建议/);
+  assert.ok(result.missingInformation.some((item) => item.includes("长期目标")));
+});
+
+test("broad AI and project words alone do not make an unrelated fact relevant", () => {
+  const unrelated = profile.items.find((item) => item.id === "s1")!;
+  const result = retrieveDecisionContext(profile, [unrelated], { ...request, goal: "AI 项目管理助手", taskContext: "查看 Profile Pack 架构" });
+  assert.equal(result.personalized, false);
 });

@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, open, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { AgentPolicy, AuditEntry, DecisionContextResult, DecisionRequest, PresentationPolicy, ProfileEvent, ProfileItem, ProfilePack, ProfileStatus, ProfileUpdate, Proposal } from "./types.js";
+import type { AgentPolicy, AuditEntry, DecisionCandidate, DecisionContextResult, DecisionEvaluation, DecisionRequest, PresentationPolicy, ProfileEvent, ProfileItem, ProfilePack, ProfileStatus, ProfileUpdate, Proposal } from "./types.js";
 import { retrieveDecisionContext } from "./decision.js";
+import { evaluateCandidates } from "./decision-evaluator.js";
 
 const DEFAULT_POLICY: PresentationPolicy = {
   mode: "implicit_personalization",
@@ -95,6 +96,13 @@ export class ProfileStore {
     const result = retrieveDecisionContext(view.profile, view.items, { ...request, scopes });
     await this.audit({ timestamp: new Date().toISOString(), agentId: request.agentId, action: "retrieve_decision_context", scopes, purpose: request.purpose ?? "decision_context" });
     return result;
+  }
+
+  async evaluateDecisionCandidates(request: DecisionRequest, candidates: DecisionCandidate[]): Promise<{ context: DecisionContextResult; evaluation: DecisionEvaluation }> {
+    const context = await this.getDecisionContext(request);
+    const evaluation = evaluateCandidates(context, candidates);
+    await this.audit({ timestamp: new Date().toISOString(), agentId: request.agentId, action: "evaluate_decision_candidates", scopes: context.request.scopes ?? ["global"], purpose: request.purpose ?? "decision_evaluation" });
+    return { context, evaluation };
   }
 
   async initialize(items: ProfileUpdate[], agentId: string): Promise<ProfilePack> {

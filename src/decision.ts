@@ -1,5 +1,7 @@
 import type { DecisionContextEvidence, DecisionContextResult, DecisionRequest, ProfileItem, ProfilePack } from "./types.js";
 
+const LOW_SIGNAL_TERMS = new Set(["ai", "agent", "agents", "profile", "pack", "project", "项目", "助手", "内容", "信息", "架构", "实现", "当前", "用户", "个人", "相关", "使用", "进行", "方面", "结构", "构化", "方案"]);
+
 /**
  * Conservative, dependency-free relevance gate for decision requests.
  * It is intentionally deterministic: an LLM is not required to decide which
@@ -25,8 +27,14 @@ export function retrieveDecisionContext(profile: ProfilePack, items: ProfileItem
 function scoreItem(item: ProfileItem, queryTerms: Set<string>, request: DecisionRequest): DecisionContextEvidence | undefined {
   if (item.expiresAt && new Date(item.expiresAt).getTime() < Date.now()) return undefined;
   const itemTerms = terms(item.statement);
-  const matchedTerms = [...itemTerms].filter((term) => queryTerms.has(term));
-  let score = matchedTerms.length ? Math.min(0.85, 0.3 + matchedTerms.length * 0.16) : 0;
+  const allMatches = [...itemTerms].filter((term) => queryTerms.has(term));
+  const matchedTerms = allMatches.filter((term) => !LOW_SIGNAL_TERMS.has(term));
+  const decisionLike = /规划|方案|选择|项目|技术|计划|排序|决策|planning|selection|priority/i.test([request.goal, request.taskContext ?? "", request.taskType ?? ""].join(" "));
+  const formatPreference = decisionLike && ["preference", "boundary"].includes(item.kind) && ["plan", "comparison", "prioritization", "recommendation"].includes(request.outputType ?? "recommendation");
+  const minimumMatches = item.kind === "goal" ? 1 : item.kind === "preference" || item.kind === "boundary" ? 1 : 2;
+  const usableMatches = matchedTerms.length || (item.kind === "goal" && allMatches.length >= 2 ? allMatches.length : 0);
+  let score = usableMatches >= minimumMatches ? Math.min(0.85, 0.3 + usableMatches * 0.16) : 0;
+  if (formatPreference) score = Math.max(score, 0.42);
   const isGlobal = item.scope === "global";
   const scopeMatch = !request.scopes?.length || request.scopes.includes(item.scope) || (isGlobal && request.scopes.includes("global"));
   if (!scopeMatch) return undefined;
@@ -34,7 +42,7 @@ function scoreItem(item: ProfileItem, queryTerms: Set<string>, request: Decision
   if (request.taskType && item.scope === request.taskType) score += 0.2;
   score *= Math.max(0.5, item.confidence);
   if (score < 0.2) return undefined;
-  const reason = matchedTerms.length ? `与任务关键词匹配：${matchedTerms.join("、")}` : "属于用户确认的全局偏好或边界，作为背景参考";
+  const reason = matchedTerms.length ? `与任务关键词匹配：${matchedTerms.join("、")}` : "属于用户确认的表达偏好或边界，仅用于组织回答";
   return { item, relevanceScore: Number(Math.min(1, score).toFixed(3)), matchedTerms, reason };
 }
 

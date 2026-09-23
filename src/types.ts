@@ -118,6 +118,34 @@ export interface DecisionContextResult {
   missingInformation: string[];
 }
 
+export interface DecisionCandidate {
+  id: string;
+  title: string;
+  summary: string;
+  steps: string[];
+  estimatedDays?: number;
+  estimatedCost?: string;
+  risks: string[];
+  assumptions: string[];
+}
+
+export interface DecisionCandidateScore {
+  candidateId: string;
+  scores: { relevance: number; feasibility: number; risk: number; profileFit: number; total: number };
+  constraintConflicts: string[];
+  matchedEvidenceIds: string[];
+  reasons: string[];
+}
+
+export interface DecisionEvaluation {
+  evaluator: "rule";
+  recommendedCandidateId?: string;
+  scores: DecisionCandidateScore[];
+  missingInformation: string[];
+  requiresUserConfirmation: true;
+  message: string;
+}
+
 export interface ProfileObservation {
   observationId: string;
   agentId: string;
