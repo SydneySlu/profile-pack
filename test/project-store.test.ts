@@ -73,3 +73,22 @@ test("project IDs cannot escape the project data directory", async () => {
   const store = await makeStore();
   await assert.rejects(() => store.get("../../profile.json"), /Invalid Project Profile ID/);
 });
+
+test("decision feedback is append-only and does not update either Profile", async () => {
+  const root = await mkdtemp(join(tmpdir(), "project-decision-log-"));
+  const profileStore = new ProfileStore(root);
+  const personal = await profileStore.initialize([{ kind: "goal", scope: "global", statement: "个人目标" }], "user");
+  const projects = new ProjectStore(root);
+  const project = await projects.create({ name: "AI 项目", goal: "完成 MVP", allowedAgents: ["codex"] });
+  const entry = await projects.recordDecision({ projectId: project.projectId, goal: "选择项目架构", candidateIds: ["a", "b"], recommendedCandidateId: "a", action: "modified", selectedCandidateId: "a", modification: "保留独立数据层", reason: "避免污染个人 Profile", evaluator: "rule", profileVersion: personal.version, agentId: "codex" });
+  assert.equal(entry.action, "modified");
+  assert.equal((await projects.listDecisions(project.projectId, "codex")).length, 1);
+  assert.equal((await projects.get(project.projectId, "codex")).version, project.version);
+  assert.equal((await profileStore.getProfile()).version, personal.version);
+});
+
+test("unauthorized Agent cannot write decision feedback", async () => {
+  const store = await makeStore();
+  const project = await store.create({ name: "Private", goal: "test", allowedAgents: ["codex"] });
+  await assert.rejects(() => store.recordDecision({ projectId: project.projectId, goal: "test", candidateIds: [], action: "rejected", evaluator: "rule", agentId: "claude-code" }), /not authorized/);
+});

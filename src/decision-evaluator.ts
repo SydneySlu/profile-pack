@@ -1,5 +1,18 @@
 import type { DecisionCandidate, DecisionCandidateScore, DecisionContextResult, DecisionEvaluation } from "./types.js";
 
+export interface DecisionEvaluator {
+  readonly id: string;
+  evaluate(context: DecisionContextResult, candidates: DecisionCandidate[]): DecisionEvaluation;
+}
+
+export class RuleEvaluator implements DecisionEvaluator {
+  readonly id = "rule";
+
+  evaluate(context: DecisionContextResult, candidates: DecisionCandidate[]): DecisionEvaluation {
+    return evaluateCandidates(context, candidates);
+  }
+}
+
 export function evaluateCandidates(context: DecisionContextResult, candidates: DecisionCandidate[]): DecisionEvaluation {
   if (candidates.length < 2 || candidates.length > 3) throw new Error("Decision evaluation requires 2-3 candidates");
   const scores = candidates.map((candidate) => scoreCandidate(context, candidate));

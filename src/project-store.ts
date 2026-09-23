@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, open, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { AuditEntry, ProjectCreateInput, ProjectProfile, ProjectProposal, ProjectUpdatePatch } from "./types.js";
+import type { AuditEntry, DecisionLogEntry, ProjectCreateInput, ProjectProfile, ProjectProposal, ProjectUpdatePatch } from "./types.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -128,12 +128,31 @@ export class ProjectStore {
     });
   }
 
+  async recordDecision(entry: Omit<DecisionLogEntry, "decisionId" | "createdAt">): Promise<DecisionLogEntry> {
+    return this.withLock(async () => {
+      const project = await this.readProject(entry.projectId);
+      this.assertAccess(project, entry.agentId);
+      const decision: DecisionLogEntry = { ...entry, decisionId: randomUUID(), createdAt: new Date().toISOString() };
+      await writeFile(this.decisionsPath(project.projectId), `${JSON.stringify(decision)}\n`, { encoding: "utf8", flag: "a" });
+      await this.appendEvent(project.projectId, { eventId: randomUUID(), type: "decision_feedback_recorded", agentId: entry.agentId, createdAt: decision.createdAt, payload: { decisionId: decision.decisionId, action: decision.action } });
+      await this.audit({ timestamp: decision.createdAt, agentId: entry.agentId, action: "record_decision_feedback", scopes: [project.projectId], purpose: "decision_log" });
+      return decision;
+    });
+  }
+
+  async listDecisions(projectId: string, agentId = "user"): Promise<DecisionLogEntry[]> {
+    const project = await this.get(projectId, agentId, "decision_log");
+    const path = this.decisionsPath(project.projectId);
+    try { return (await readFile(path, "utf8")).trim().split("\n").filter(Boolean).map((line) => JSON.parse(line) as DecisionLogEntry); } catch { return []; }
+  }
+
   private canAccess(project: ProjectProfile, agentId: string): boolean { return agentId === "user" || project.allowedAgents.includes("*") || project.allowedAgents.includes(agentId); }
   private assertAccess(project: ProjectProfile, agentId: string): void { if (!this.canAccess(project, agentId)) throw new Error(`Agent ${agentId} is not authorized for Project Profile ${project.projectId}`); }
   private projectDir(projectId: string): string { if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId)) throw new Error("Invalid Project Profile ID"); return join(this.projectsDir, projectId); }
   private projectPath(projectId: string): string { return join(this.projectDir(projectId), "project.json"); }
   private proposalsPath(projectId: string): string { return join(this.projectDir(projectId), "proposals.json"); }
   private eventsPath(projectId: string): string { return join(this.projectDir(projectId), "events.jsonl"); }
+  private decisionsPath(projectId: string): string { return join(this.projectDir(projectId), "decisions.jsonl"); }
   private async writeProject(project: ProjectProfile): Promise<void> { await mkdir(join(this.projectDir(project.projectId), "snapshots"), { recursive: true }); await this.writeJson(this.projectPath(project.projectId), project); await this.writeJson(join(this.projectDir(project.projectId), "snapshots", `v${String(project.version).padStart(6, "0")}.json`), project); }
   private async readProject(projectId: string): Promise<ProjectProfile> { await this.ensure(); return JSON.parse(await readFile(this.projectPath(projectId), "utf8")) as ProjectProfile; }
   private async readProposals(projectId: string): Promise<ProjectProposal[]> { return JSON.parse(await readFile(this.proposalsPath(projectId), "utf8")) as ProjectProposal[]; }

@@ -237,6 +237,24 @@ export interface ProjectProposal {
   updatedAt: string;
 }
 
+export type DecisionFeedbackAction = "accepted" | "modified" | "rejected" | "regenerated";
+
+export interface DecisionLogEntry {
+  decisionId: string;
+  projectId: string;
+  goal: string;
+  candidateIds: string[];
+  recommendedCandidateId?: string;
+  action: DecisionFeedbackAction;
+  selectedCandidateId?: string;
+  modification?: string;
+  reason?: string;
+  evaluator: string;
+  profileVersion?: number;
+  createdAt: string;
+  agentId: string;
+}
+
 export interface ProfileObservation {
   observationId: string;
   agentId: string;

@@ -23,7 +23,7 @@ Version `0.1.0` provides:
 - deterministic decision-context retrieval that filters Profile evidence by task relevance before a recommendation is generated;
 - tests for onboarding state, proposal review, privacy filtering, and concurrent writes.
 
-As of this milestone, the repository contains **24 passing automated tests** covering onboarding, profile proposals, learning aggregation, privacy permissions, concurrent writes, migration, version rollback, and response evaluation. It includes configurable Ollama and OpenAI-compatible extractors, while direct structured observations remain available as a no-model fallback. The daemon and management UI are intentionally local-only.
+As of this milestone, the repository contains **41 passing automated tests** covering onboarding, profile proposals, learning aggregation, privacy permissions, concurrent writes, migration, version rollback, response evaluation, Project Profiles, and decision feedback. It includes configurable Ollama and OpenAI-compatible extractors, while direct structured observations remain available as a no-model fallback. The daemon and management UI are intentionally local-only.
 
 ### What is intentionally not included yet
 
@@ -32,7 +32,7 @@ As of this milestone, the repository contains **24 passing automated tests** cov
 - no semantic LLM conflict judge: Agent-specific context and portable traits are separated by explicit scope and evidence rules first;
 - no personal profile data in this public repository.
 
-The next iteration will focus on a small end-to-end demo profile, host-specific installation guidance, and longer-running evaluation across real Codex and Claude Code sessions. Live user data belongs in a private directory such as `/Users/syd/.profile-pack`, which is ignored by Git.
+Live user data belongs in a private directory such as `/Users/syd/.profile-pack`, which is ignored by Git. Project Profiles and their decision logs are also local data and are not committed to this repository.
 
 The cross-Agent evaluation protocol is documented in `docs/evaluation/cross-agent.md`.
 
@@ -46,9 +46,11 @@ The same gate is available without MCP:
 PROFILE_PACK_DIR="$HOME/.profile-pack" npm run dev -- decision-context --goal "为个人 AI Agent 项目选择技术方案" --context "需要规划第一版" --constraint "时间有限" --agent-id codex
 ```
 
-The host Agent generates 2-3 candidates; `evaluate_decision_candidates` applies a deterministic, transparent RuleEvaluator and flags explicit time-limit conflicts. It never makes the final decision or modifies the Profile. Candidate generation remains the host's responsibility. Decision persistence and user feedback are not implemented yet. See `docs/evaluation/decision-layer.md` for the implementation boundary.
+The host Agent generates 2-3 candidates; `evaluate_decision_candidates` applies a deterministic, transparent RuleEvaluator and flags explicit time-limit conflicts. It never makes the final decision or modifies a Profile. Candidate generation remains the host's responsibility. Through Project Profile tools, decision feedback can be recorded in an append-only log, and the local UI supports project review. See `docs/evaluation/decision-layer.md` for the implementation boundary and Jev status.
 
-Project work context is stored as a separate Project Profile under `.profile-pack/projects/`, not mixed into the personal Profile schema. MCP tools support project creation, access allowlists, context reads, update proposals, and user confirmation/rejection. Confirmed updates create a new project version; stale proposals are not applied. This is a local single-user control model, not remote identity or multi-user security.
+Project work context is stored as a separate Project Profile under `.profile-pack/projects/`, not mixed into the personal Profile schema. MCP tools support project creation, access-scoped reads, and update proposals. The local Web UI handles access-list changes and proposal approval; confirmed updates create a new project version, while stale proposals are not applied. This is a local single-user control model, not cryptographic identity or remote multi-user security.
+
+Decision feedback is stored separately as an append-only project `decisions.jsonl` log through `record_decision_feedback`. Accepting, modifying, rejecting, or regenerating a recommendation does not update either Profile automatically. The localhost Web UI lists projects, project details, pending updates, and decision records, and supports project creation, Agent access changes, and proposal review.
 
 ## LLM extraction providers
 
