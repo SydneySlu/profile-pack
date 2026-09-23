@@ -18,6 +18,7 @@ const learning = new LearningEngine(rootDir);
 const [command, ...args] = process.argv.slice(2);
 
 function option(name: string, fallback?: string): string | undefined { const index = args.indexOf(name); return index >= 0 ? args[index + 1] : fallback; }
+function options(name: string): string[] { return args.flatMap((value, index) => value === name && args[index + 1] ? [args[index + 1]!] : []); }
 
 async function main(): Promise<void> {
   if (command === "init") { await store.ensure(); console.log(JSON.stringify(await store.status(), null, 2)); return; }
@@ -54,6 +55,12 @@ async function main(): Promise<void> {
   }
   if (command === "review") { if (args.includes("--interactive")) { await runReview(store, learning); } else console.log(JSON.stringify({ proposals: await store.listProposals(), candidates: await learning.listCandidateSummaries(), conflicts: await learning.listConflicts() }, null, 2)); return; }
   if (command === "eval") { const file = option("--file"); if (!file) throw new Error("Usage: profile-pack eval --file response.txt [--scope coding]"); const profile = await store.getProfile(); const view = await store.getView([option("--scope", "global")!], "cli", "response_evaluation"); console.log(JSON.stringify(evaluateResponse(await readFile(file, "utf8"), profile, view.items), null, 2)); return; }
+  if (command === "decision-context") {
+    const goal = option("--goal");
+    if (!goal) throw new Error("Usage: profile-pack decision-context --goal \"...\" [--context \"...\"] [--scope coding] [--agent-id codex]");
+    console.log(JSON.stringify(await store.getDecisionContext({ goal, taskContext: option("--context"), constraints: options("--constraint"), scopes: option("--scope") ? [option("--scope")!] : undefined, taskType: option("--task-type"), outputType: (option("--output", "recommendation") as "plan" | "comparison" | "prioritization" | "recommendation" | "custom"), agentId: option("--agent-id", "cli")!, purpose: option("--purpose", "decision_context"), allowSensitive: args.includes("--allow-sensitive"), token: option("--token") }), null, 2));
+    return;
+  }
   if (command === "versions") { console.log(JSON.stringify(await store.listVersions(), null, 2)); return; }
   if (command === "compare") { const from = Number(option("--from")); const to = Number(option("--to")); if (!from || !to) throw new Error("Usage: profile-pack compare --from 1 --to 2"); console.log(JSON.stringify(await store.compareVersions(from, to), null, 2)); return; }
   if (command === "rollback") { const version = Number(option("--version")); if (!version) throw new Error("Usage: profile-pack rollback --version 1"); console.log(JSON.stringify(await store.rollback(version), null, 2)); return; }

@@ -1,6 +1,6 @@
 # Cross-Agent evaluation
 
-Use the same prompts in Codex (`agentId: codex`) and Claude Code (`agentId: claude-code`). These prompts are synthetic and should not contain private task data.
+Use the same prompts in Codex (`agentId: codex`) and Claude Code (`agentId: claude-code`). These prompts are synthetic and should not contain private task data. For decision-layer tests, prefer `retrieve_decision_context` over `get_profile` so the Agent receives only task-relevant evidence.
 
 ## 1. Connection and scope
 

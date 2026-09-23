@@ -20,6 +20,7 @@ Version `0.1.0` provides:
 - JSON export for migration;
 - multi-Agent observation aggregation and same-dimension conflict detection;
 - Agent-specific interaction preferences separated from portable user traits;
+- deterministic decision-context retrieval that filters Profile evidence by task relevance before a recommendation is generated;
 - tests for onboarding state, proposal review, privacy filtering, and concurrent writes.
 
 As of this milestone, the repository contains **24 passing automated tests** covering onboarding, profile proposals, learning aggregation, privacy permissions, concurrent writes, migration, version rollback, and response evaluation. It includes configurable Ollama and OpenAI-compatible extractors, while direct structured observations remain available as a no-model fallback. The daemon and management UI are intentionally local-only.
@@ -34,6 +35,18 @@ As of this milestone, the repository contains **24 passing automated tests** cov
 The next iteration will focus on a small end-to-end demo profile, host-specific installation guidance, and longer-running evaluation across real Codex and Claude Code sessions. Live user data belongs in a private directory such as `/Users/syd/.profile-pack`, which is ignored by Git.
 
 The cross-Agent evaluation protocol is documented in `docs/evaluation/cross-agent.md`.
+
+## Decision layer (phase 1)
+
+The MCP tool `retrieve_decision_context` accepts a decision goal, task context, constraints, output type, scope, and Agent identity. It returns only relevant Profile evidence, the current Profile version, matched terms, and missing information. If no relevant evidence is found, it explicitly marks the result as a generic recommendation rather than pretending to be personalized. This gate is deterministic and does not require Ollama, a paid API, or an LLM judge.
+
+The same gate is available without MCP:
+
+```bash
+PROFILE_PACK_DIR="$HOME/.profile-pack" npm run dev -- decision-context --goal "为个人 AI Agent 项目选择技术方案" --context "需要规划第一版" --constraint "时间有限" --agent-id codex
+```
+
+The current phase does not generate candidates, record user decisions, or update the official Profile automatically. Those belong to the next decision-layer phase. See `docs/evaluation/decision-layer.md` for the implementation boundary.
 
 ## LLM extraction providers
 

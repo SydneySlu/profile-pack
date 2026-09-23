@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, open, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { AgentPolicy, AuditEntry, PresentationPolicy, ProfileEvent, ProfileItem, ProfilePack, ProfileStatus, ProfileUpdate, Proposal } from "./types.js";
+import type { AgentPolicy, AuditEntry, DecisionContextResult, DecisionRequest, PresentationPolicy, ProfileEvent, ProfileItem, ProfilePack, ProfileStatus, ProfileUpdate, Proposal } from "./types.js";
+import { retrieveDecisionContext } from "./decision.js";
 
 const DEFAULT_POLICY: PresentationPolicy = {
   mode: "implicit_personalization",
@@ -86,6 +87,14 @@ export class ProfileStore {
     await this.audit({ timestamp: new Date().toISOString(), agentId, action: "read_profile", scopes: effectiveScopes, purpose });
     const summary = items.length === 0 ? "当前没有可用的用户画像内容。" : items.map((item) => `- ${item.statement}`).join("\n");
     return { profile: { ...profile, items }, items, summary };
+  }
+
+  async getDecisionContext(request: DecisionRequest): Promise<DecisionContextResult> {
+    const scopes = [...new Set(request.scopes?.length ? request.scopes : [request.taskType ?? "global", "global"] )];
+    const view = await this.getView(scopes, request.agentId, request.purpose ?? "decision_context", request.allowSensitive === true, request.token);
+    const result = retrieveDecisionContext(view.profile, view.items, { ...request, scopes });
+    await this.audit({ timestamp: new Date().toISOString(), agentId: request.agentId, action: "retrieve_decision_context", scopes, purpose: request.purpose ?? "decision_context" });
+    return result;
   }
 
   async initialize(items: ProfileUpdate[], agentId: string): Promise<ProfilePack> {

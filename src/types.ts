@@ -87,6 +87,37 @@ export interface AgentPolicy {
   token?: string;
 }
 
+export type DecisionOutputType = "plan" | "comparison" | "prioritization" | "recommendation" | "custom";
+
+export interface DecisionRequest {
+  goal: string;
+  taskContext?: string;
+  constraints?: string[];
+  outputType?: DecisionOutputType;
+  scopes?: string[];
+  taskType?: string;
+  agentId: string;
+  purpose?: string;
+  allowSensitive?: boolean;
+  token?: string;
+}
+
+export interface DecisionContextEvidence {
+  item: ProfileItem;
+  relevanceScore: number;
+  matchedTerms: string[];
+  reason: string;
+}
+
+export interface DecisionContextResult {
+  personalized: boolean;
+  message: string;
+  request: DecisionRequest;
+  profileVersion: number;
+  evidence: DecisionContextEvidence[];
+  missingInformation: string[];
+}
+
 export interface ProfileObservation {
   observationId: string;
   agentId: string;

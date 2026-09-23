@@ -26,3 +26,16 @@ test("sensitive access can be granted per item without broad Agent access", asyn
   assert.equal((await store.getView(["global"], "codex", "coding", true)).items.some((item) => item.id === sensitive.id), true);
   assert.equal((await store.getView(["global"], "claude-code", "coding", true)).items.some((item) => item.id === sensitive.id), false);
 });
+
+test("decision context honors Agent token and sensitive filtering", async () => {
+  const store = new ProfileStore(await mkdtemp(join(tmpdir(), "profile-decision-permission-")));
+  await store.initialize([
+    { kind: "goal", scope: "global", statement: "学习 AI 项目规划", sensitivity: "normal" },
+    { kind: "fact", scope: "finance", statement: "理财目标是保值并盈利", sensitivity: "high" }
+  ], "user");
+  await store.setAgentToken("codex", "decision-token");
+  await assert.rejects(() => store.getDecisionContext({ goal: "AI 项目规划", agentId: "codex" }), /authentication failed/);
+  const result = await store.getDecisionContext({ goal: "AI 项目规划", agentId: "codex", token: "decision-token", allowSensitive: true });
+  assert.equal(result.evidence.some((entry) => entry.item.scope === "finance"), false);
+  assert.equal(result.evidence.some((entry) => entry.item.scope === "global"), true);
+});
