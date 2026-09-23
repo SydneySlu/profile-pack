@@ -30,6 +30,7 @@ As of this milestone, the repository contains **41 passing automated tests** cov
 - no hosted account system, remote authentication, or multi-user tenancy;
 - no automatic promotion of observations into the official profile;
 - no semantic LLM conflict judge: Agent-specific context and portable traits are separated by explicit scope and evidence rules first;
+- no Jev runtime integration yet: TypeSafe registration is currently unavailable, so local rule evaluation remains the default;
 - no personal profile data in this public repository.
 
 Live user data belongs in a private directory such as `/Users/syd/.profile-pack`, which is ignored by Git. Project Profiles and their decision logs are also local data and are not committed to this repository.
@@ -46,7 +47,7 @@ The same gate is available without MCP:
 PROFILE_PACK_DIR="$HOME/.profile-pack" npm run dev -- decision-context --goal "为个人 AI Agent 项目选择技术方案" --context "需要规划第一版" --constraint "时间有限" --agent-id codex
 ```
 
-The host Agent generates 2-3 candidates; `evaluate_decision_candidates` applies a deterministic, transparent RuleEvaluator and flags explicit time-limit conflicts. It never makes the final decision or modifies a Profile. Candidate generation remains the host's responsibility. Through Project Profile tools, decision feedback can be recorded in an append-only log, and the local UI supports project review. See `docs/evaluation/decision-layer.md` for the implementation boundary and Jev status.
+The host Agent generates 2-3 candidates; `evaluate_decision_candidates` applies a deterministic, transparent RuleEvaluator and flags explicit time-limit conflicts. It never makes the final decision or modifies a Profile. Candidate generation remains the host's responsibility. Through Project Profile tools, decision feedback can be recorded in an append-only log, and the local UI supports project review. Jev is currently deferred because TypeSafe registration is unavailable; no remote evaluation call is made. See `docs/evaluation/decision-layer.md` for the implementation boundary and `docs/evaluation/iteration-report-2026-09.md` for this iteration's evidence.
 
 Project work context is stored as a separate Project Profile under `.profile-pack/projects/`, not mixed into the personal Profile schema. MCP tools support project creation, access-scoped reads, and update proposals. The local Web UI handles access-list changes and proposal approval; confirmed updates create a new project version, while stale proposals are not applied. This is a local single-user control model, not cryptographic identity or remote multi-user security.
 
